@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: ff6427fa-7d52-4fda-8492-e29d55252c86
+
+localResources:
+  specs:
+    - ..\auth.proto

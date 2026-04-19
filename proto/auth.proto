@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package auth;
+
+// AuthService provides authentication and user profile operations
+service AuthService {
+  // ValidateToken validates a JWT token and returns user claims
+  rpc ValidateToken (ValidateTokenRequest) returns (UserClaims) {}
+  // GetUserById retrieves user profile information by ID
+  rpc GetUserById (UserByIdRequest) returns (UserProfile) {}
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message UserClaims {
+  string user_id = 1;
+  string email = 2;
+  string role = 3;
+}
+
+message UserByIdRequest {
+  string user_id = 1;
+}
+
+message UserProfile {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+}
