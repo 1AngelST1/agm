@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # 1. Base de datos Relacional (PostgreSQL) - Para Auth, Periodos, Alumnos, Calificaciones, Reportes
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: agm_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+    volumes:
+      - ./init-dbs.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # 2. Base de datos Documental (MongoDB) - Para Notificaciones
+  mongo-db:
+    image: mongo:6
+    container_name: agm_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    restart: unless-stopped
+
+  # 3. Caché en Memoria (Redis) - Para el módulo de Asistencias QR en tiempo real
+  redis-cache:
+    image: redis:7-alpine
+    container_name: agm_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  mongodata:
