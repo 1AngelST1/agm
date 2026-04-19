@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. Base de datos Relacional (PostgreSQL) - Para Auth, Periodos, Alumnos, Calificaciones, Reportes
   postgres-db:
