@@ -28,4 +28,5 @@ message UserProfile {
   string user_id = 1;
   string name = 2;
   string email = 3;
+  string role = 4;
 }

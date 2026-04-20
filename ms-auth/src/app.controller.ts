@@ -27,29 +27,26 @@ export class AppController {
     return await this.userRepository.save(nuevoUsuario);
   }
 
-  @GrpcMethod('AuthService', 'ValidateToken')
-  validateToken(data: { token: string }) {
-    console.log('gRPC recibido: Validando token:', data.token);
-    // Nota: Aún devolvemos esto inventado hasta que hagamos el login real
-    return { userId: '123', email: 'angel@uni.mx', role: 'admin' };
-  }
-
+  // El primer parámetro es el nombre del servicio en el proto, el segundo es el nombre del RPC
   @GrpcMethod('AuthService', 'GetUserById')
   async getUserById(data: { userId: string }) {
+    // <-- NestJS lo transformó a userId
+
     console.log('gRPC recibido: Buscando usuario en BD:', data.userId);
-    // Busca en la base de datos real
-    const usuarioReal = await this.userRepository.findOne({
-      where: { id: data.userId },
+
+    const user = await this.userRepository.findOne({
+      where: { id: data.userId }, // <-- Buscamos por userId
     });
-    if (!usuarioReal) {
-      console.log('Usuario no encontrado en BD');
-      return { userId: 'no-encontrado', name: 'N/A', email: 'N/A' };
+
+    if (!user) {
+      return {};
     }
 
     return {
-      userId: usuarioReal.id,
-      name: usuarioReal.name,
-      email: usuarioReal.email,
+      user_id: user.id, // Al devolverlo sí respetamos el proto
+      name: user.name,
+      email: user.email,
+      role: user.role,
     };
   }
 }
