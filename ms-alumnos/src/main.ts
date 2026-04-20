@@ -6,6 +6,7 @@ import { join } from 'path';
 async function bootstrap() {
   // 1. Iniciamos la app tradicional para el REST API
   const app = await NestFactory.create(AppModule);
+  app.enableCors(); // Habilitamos CORS para que el frontend pueda consumir esta API sin problemas
 
   // 2. Le "conectamos" el servidor gRPC en un puerto diferente al de Auth
   app.connectMicroservice<MicroserviceOptions>({
@@ -20,8 +21,8 @@ async function bootstrap() {
   // 3. Arrancamos ambos motores
   await app.startAllMicroservices(); // Prende el gRPC (5001)
   await app.listen(3002); // Prende el REST (3002)
-  console.log('✅ ms-alumnos REST escuchando en puerto 3002');
-  console.log('✅ ms-alumnos gRPC escuchando en puerto 5001');
+  console.log(' ms-alumnos REST escuchando en puerto 3002');
+  console.log(' ms-alumnos gRPC escuchando en puerto 5001');
 }
 
 bootstrap().catch((err) => {
