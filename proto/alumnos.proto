@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package alumnos;
+
+// Servicio para gestionar alumnos
+service AlumnosService {
+  // Obtiene los datos de un alumno por su ID
+  rpc GetAlumnoById (GetAlumnoRequest) returns (AlumnoResponse);
+}
+
+message GetAlumnoRequest {
+  string alumno_id = 1;
+}
+
+message AlumnoResponse {
+  string alumno_id = 1;
+  string nombre = 2;
+  string matricula = 3;
+}
