@@ -2,13 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-
 async function bootstrap() {
-  // 1. Instancia para REST (tu API común)
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
   await app.listen(3001);
 
-  // 2. Instancia para gRPC (para los otros microservicios)
+  // Instancia gRPC
   const grpcApp = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
@@ -16,11 +15,15 @@ async function bootstrap() {
       options: {
         package: 'auth',
         protoPath: join(__dirname, '../../proto/auth.proto'),
-        url: '0.0.0.0:5000', // Puerto gRPC fijo para que otros servicios se conecten
+        url: '0.0.0.0:5000',
       },
     },
   );
   await grpcApp.listen();
+
+  // --- LOS MENSAJES AL FINAL PARA QUE ESTÉN JUNTOS ---
+  console.log('ms-auth REST escuchando en puerto 3001');
+  console.log('ms-auth gRPC escuchando en puerto 5000');
 }
 
 bootstrap().catch((err) => {

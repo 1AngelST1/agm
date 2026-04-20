@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'; // <--- Importa TypeOrmModule a
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { User } from './user.entity';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -18,6 +19,11 @@ import { User } from './user.entity';
       synchronize: true, // ¡OJO! Esto crea las tablas automáticamente en desarrollo
     }),
     TypeOrmModule.forFeature([User]), // <--- Agrega el repositorio de User aquí
+    // 2. Configura el JWT
+    JwtModule.register({
+      secret: 'mi_clave_secreta_agm', // En la vida real esto va en un archivo .env
+      signOptions: { expiresIn: '2h' }, // El token durará 2 horas
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

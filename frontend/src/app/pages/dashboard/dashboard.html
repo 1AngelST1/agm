@@ -1,0 +1,33 @@
+<div class="top-bar">
+  <button (click)="cerrarSesion()" class="btn-salir">Salir</button>
+</div>
+
+<div class="dashboard-container">
+  <h2>🎓 Portal de Alumnos AGM</h2>
+  
+  <div class="search-box">
+    <input 
+      type="text" 
+      [(ngModel)]="alumnoId" 
+      placeholder="Ej: alu_f9006874" 
+      class="search-input"
+    >
+    <button (click)="buscarAlumno()" class="btn-buscar">Buscar</button>
+  </div>
+
+  @if (cargando()) { <p>Buscando en los microservicios...</p> }
+  @if (error()) { <p class="error-text">{{ error() }}</p> }
+
+  @if (alumnoData(); as alumno) {
+    <div class="alumno-card">
+      <h3>{{ alumno.nombre_completo }}</h3>
+      <p><strong>Matrícula:</strong> {{ alumno.matricula }}</p>
+      <p><strong>Carrera:</strong> {{ alumno.carrera }}</p>
+      <p><strong>Correo:</strong> {{ alumno.correo_contacto }}</p>
+      <hr>
+      <p class="metadata">
+        Estado: {{ alumno.status_cuenta }} | Rol: {{ alumno.metadata.rol_sistema }}
+      </p>
+    </div>
+  }
+</div>

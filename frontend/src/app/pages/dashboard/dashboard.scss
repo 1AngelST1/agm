@@ -1,0 +1,61 @@
+.top-bar {
+  background: #eee;
+  padding: 10px 20px;
+  text-align: right;
+}
+
+.btn-salir {
+  padding: 8px 15px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover { background: #c82333; }
+}
+
+.dashboard-container {
+  font-family: Arial, sans-serif;
+  padding: 40px;
+  max-width: 600px;
+  margin: auto;
+
+  h2 { margin-top: 0; }
+}
+
+.search-box {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.search-input {
+  padding: 10px;
+  flex: 1; /* Para que ocupe el espacio disponible */
+  font-size: 16px;
+}
+
+.btn-buscar {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.error-text {
+  color: red;
+}
+
+.alumno-card {
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+
+  h3 { margin-top: 0; }
+}
+
+.metadata {
+  font-size: 12px;
+  color: #666;
+}

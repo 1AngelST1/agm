@@ -1,18 +1,18 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterOutlet } from "@angular/router";
+import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-root',
-  imports: [FormsModule, RouterOutlet], // Agregamos FormsModule para poder usar el input
-  templateUrl: './app.html',
-  styleUrl: './app.scss'
+  selector: 'app-dashboard',
+  imports: [FormsModule],
+  templateUrl: './dashboard.html',
+  styleUrl: './dashboard.scss'
 })
-export class App {
+export class Dashboard {
   http = inject(HttpClient);
+  router = inject(Router);
   
-  // Nuestras Signals (Estado)
   alumnoId = signal('');
   alumnoData = signal<any>(null);
   cargando = signal(false);
@@ -20,12 +20,10 @@ export class App {
 
   buscarAlumno() {
     if (!this.alumnoId()) return;
-
     this.cargando.set(true);
     this.error.set('');
     this.alumnoData.set(null);
 
-    // Petición a tu ms-alumnos
     this.http.get(`http://localhost:3002/alumnos/${this.alumnoId()}`).subscribe({
       next: (data) => {
         this.alumnoData.set(data);
@@ -33,9 +31,14 @@ export class App {
       },
       error: (err) => {
         console.error(err);
-        this.error.set('Alumno no encontrado o error de conexión.');
+        this.error.set('Alumno no encontrado.');
         this.cargando.set(false);
       }
     });
+  }
+
+  cerrarSesion() {
+    localStorage.removeItem('token');
+    this.router.navigate(['/login']);
   }
 }
