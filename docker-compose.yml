@@ -12,6 +12,8 @@ services:
       - ./init-dbs.sql:/docker-entrypoint-initdb.d/init.sql
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+    networks:
+      - agm-network
 
   # 2. Base de datos Documental (MongoDB) - Para Notificaciones
   mongo-db:
@@ -22,6 +24,8 @@ services:
     volumes:
       - mongodata:/data/db
     restart: unless-stopped
+    networks:
+      - agm-network
 
   # 3. Caché en Memoria (Redis) - Para el módulo de Asistencias QR en tiempo real
   redis-cache:
@@ -30,7 +34,64 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 4. Microservicio de Autenticación y Usuarios
+  ms-auth:
+    build:
+      context: .
+      dockerfile: ./ms-auth/Dockerfile
+    container_name: agm_ms_auth
+    ports:
+      - "3001:3001"  # REST API
+      - "5000:5000"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_auth_db
+      - JWT_SECRET=AGM-AST
+      - JWT_EXPIRATION=3600
+      - GRPC_PORT=5000
+      - REST_PORT=3001
+    depends_on:
+      - postgres-db
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 5. Microservicio de Alumnos
+  ms-alumnos:
+    build:
+      context: .
+      dockerfile: ./ms-alumnos/Dockerfile
+    container_name: agm_ms_alumnos
+    ports:
+      - "3002:3002"  # REST API
+      - "5001:5001"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_alumnos_db
+      - AUTH_GRPC_HOST=ms-auth
+      - AUTH_GRPC_PORT=5000
+      - GRPC_PORT=5001
+      - REST_PORT=3002
+    depends_on:
+      - postgres-db
+      - ms-auth
+    restart: unless-stopped
+    networks:
+      - agm-network
 
 volumes:
   pgdata:
   mongodata:
+
+networks:
+  agm-network:
+    driver: bridge

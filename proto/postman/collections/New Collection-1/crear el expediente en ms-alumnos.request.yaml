@@ -1,5 +1,16 @@
 $kind: http-request
 name: crear el expediente en ms-alumnos
-url: ""
-method: GET
+url: http://localhost:3002/alumnos/crear
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"user_id\": \"usr_f65d9f9f\",\r
+
+    \  \"matricula\": \"202253882\",\r
+
+    \  \"carrera\": \"Ingeniería en Tecnologías de la Información\"\r
+
+    }"
 order: 1962114968356797
