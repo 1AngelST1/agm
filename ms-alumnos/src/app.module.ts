@@ -5,6 +5,7 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service'; // (Si borraste este archivo, quita esta línea y quítalo de providers)
 import { Alumno } from './alumno.entity';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -36,6 +37,6 @@ import { Alumno } from './alumno.entity';
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtStrategy],
 })
 export class AppModule {}

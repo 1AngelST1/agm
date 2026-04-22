@@ -1,9 +1,8 @@
 import { Entity, Column, PrimaryColumn, BeforeInsert } from 'typeorm';
-import { randomBytes } from 'crypto'; // Librería nativa de Node.js
+import { randomBytes } from 'crypto';
 
-@Entity('users')
+@Entity()
 export class User {
-  // Cambiamos PrimaryGeneratedColumn por PrimaryColumn normal
   @PrimaryColumn()
   id!: string;
 
@@ -13,7 +12,10 @@ export class User {
   @Column({ unique: true })
   email!: string;
 
-  @Column({ default: 'user' })
+  @Column()
+  password!: string;
+
+  @Column()
   role!: string;
 
   // TypeORM ejecutará esto automáticamente antes de hacer el INSERT

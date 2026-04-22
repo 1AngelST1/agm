@@ -21,7 +21,7 @@ import { JwtModule } from '@nestjs/jwt';
     TypeOrmModule.forFeature([User]), // <--- Agrega el repositorio de User aquí
     // 2. Configura el JWT
     JwtModule.register({
-      secret: 'mi_clave_secreta_agm', // En la vida real esto va en un archivo .env
+      secret: 'AGM-AST', // En la vida real esto va en un archivo .env
       signOptions: { expiresIn: '2h' }, // El token durará 2 horas
     }),
   ],

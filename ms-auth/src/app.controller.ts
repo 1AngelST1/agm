@@ -1,80 +1,111 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
   UnauthorizedException,
+  BadRequestException,
+  NotFoundException, // <-- Agregado para manejar errores
 } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './user.entity';
+import * as bcrypt from 'bcrypt';
+import { GrpcMethod } from '@nestjs/microservices'; // <-- Agregado para escuchar gRPC
+
+// DTOs
+interface CrearUsuarioDto {
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface LoginDto {
+  email: string;
+  password: string;
+}
 
 @Controller('auth')
 export class AppController {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
-    private jwtService: JwtService, // <-- Inyectamos el servicio JWT
+    private jwtService: JwtService,
   ) {}
 
-  @Get()
-  getStatus() {
-    return { message: 'Microservicio de Auth conectado a BD' };
-  }
+  @Post('crear')
+  async crearUsuario(@Body() body: CrearUsuarioDto) {
+    const emailParts = body.email.split('@');
+    if (emailParts.length !== 2) {
+      throw new BadRequestException('Formato de correo inválido');
+    }
+    const dominio = emailParts[1];
 
-  // --- NUEVA RUTA: LOGIN ---
-  @Post('login')
-  async login(@Body() body: { email: string }): Promise<any> {
-    // 1. Buscamos si el correo existe en la base de datos
-    const user = await this.userRepository.findOne({
-      where: { email: body.email },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Correo no registrado en el sistema');
+    let rolAsignado = '';
+    if (dominio === 'admin.buap.mx') {
+      rolAsignado = 'admin';
+    } else if (dominio === 'correo.buap.mx') {
+      rolAsignado = 'docente';
+    } else if (dominio === 'alumno.buap.mx') {
+      rolAsignado = 'alumno';
+    } else {
+      throw new BadRequestException(
+        'Dominio no autorizado. Solo se aceptan correos BUAP.',
+      );
     }
 
-    // 2. Si existe, creamos el "Payload" (la información que irá encriptada en el token)
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(body.password, saltRounds);
 
-    // 3. Firmamos el JWT y lo devolvemos al frontend
-    return {
-      mensaje: 'Login exitoso',
-      access_token: this.jwtService.sign(payload), // <-- ¡La magia del Token!
-      user_id: user.id,
-      nombre: user.name,
-    };
-  }
-
-  // NUEVO: Ruta REST para crear un usuario en la base de datos
-  @Post('crear')
-  async crearUsuario(@Body() body: { name: string; email: string }) {
     const nuevoUsuario = this.userRepository.create({
       name: body.name,
       email: body.email,
-      role: 'user', // Por ahora todos los usuarios creados por esta ruta serán 'user'
+      password: hashedPassword,
+      role: rolAsignado,
     });
+
     return await this.userRepository.save(nuevoUsuario);
   }
 
-  // El primer parámetro es el nombre del servicio en el proto, el segundo es el nombre del RPC
-  @GrpcMethod('AuthService', 'GetUserById')
-  async getUserById(data: { userId: string }) {
-    // <-- NestJS lo transformó a userId
+  @Post('login')
+  async login(@Body() body: LoginDto) {
+    const user = await this.userRepository.findOne({
+      where: { email: body.email },
+    });
+    if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
-    console.log('gRPC recibido: Buscando usuario en BD:', data.userId);
+    const isMatch = await bcrypt.compare(body.password, user.password);
+    if (!isMatch) throw new UnauthorizedException('Credenciales inválidas');
+
+    // El token ahora viaja con el rol adentro
+    const payload = { sub: user.id, email: user.email, role: user.role };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      role: user.role,
+    };
+  }
+
+  // 👇 EL MÉTODO MÁGICO CON SEGURO ANTI-ADMINS 👇
+  @GrpcMethod('AuthService', 'GetUserById')
+  async getUserById(data: { user_id?: string; userId?: string }) {
+    // Atrapamos la variable, sin importar cómo la traduzca NestJS
+    const idBuscado = data.userId || data.user_id;
+
+    // 🛡️ EL CANDADO: Si llega vacío, cortamos la llamada de inmediato
+    if (!idBuscado) {
+      throw new BadRequestException('gRPC Error: ID de usuario no recibido');
+    }
 
     const user = await this.userRepository.findOne({
-      where: { id: data.userId }, // <-- Buscamos por userId
+      where: { id: idBuscado },
     });
 
     if (!user) {
-      return {};
+      throw new NotFoundException('Usuario no encontrado');
     }
 
     return {
-      user_id: user.id, // Al devolverlo sí respetamos el proto
+      user_id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,

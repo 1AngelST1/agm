@@ -1,0 +1,5 @@
+$kind: http-request
+name: crear el expediente en ms-alumnos
+url: ""
+method: GET
+order: 1962114968356797

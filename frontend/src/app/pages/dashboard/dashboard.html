@@ -1,33 +1,41 @@
-<div class="top-bar">
-  <button (click)="cerrarSesion()" class="btn-salir">Salir</button>
-</div>
+<header class="navbar">
+  <span class="user-info">Sesión: {{ emailUsuario() }}</span>
+  <button class="logout" (click)="salir()">Cerrar Sesión</button>
+</header>
 
-<div class="dashboard-container">
-  <h2>🎓 Portal de Alumnos AGM</h2>
-  
-  <div class="search-box">
-    <input 
-      type="text" 
-      [(ngModel)]="alumnoId" 
-      placeholder="Ej: alu_f9006874" 
-      class="search-input"
-    >
-    <button (click)="buscarAlumno()" class="btn-buscar">Buscar</button>
-  </div>
+<main class="content">
+  @switch (rolUsuario()) {
+    @case ('admin') {
+      <h1 class="title-admin">👑 Panel de Administración</h1>
+      <section class="module">
+        <p>Módulos activos: Periodos, Materias y Directorio Docente.</p>
+      </section>
+    }
+    
+    @case ('docente') {
+      <h1 class="title-docente">👨‍🏫 Portal del Docente</h1>
+      <section class="module">
+        <p>Módulos activos: Ponderaciones y Pase de Lista QR.</p>
+      </section>
+    }
+    
+    @case ('alumno') {
+      <h1 class="title-alumno">🎓 Portal del Alumno</h1>
+      <div class="search-section">
+        <input type="text" [(ngModel)]="alumnoId" placeholder="Ingresa matrícula">
+        <button (click)="consultar()">Ver mis datos</button>
+      </div>
 
-  @if (cargando()) { <p>Buscando en los microservicios...</p> }
-  @if (error()) { <p class="error-text">{{ error() }}</p> }
-
-  @if (alumnoData(); as alumno) {
-    <div class="alumno-card">
-      <h3>{{ alumno.nombre_completo }}</h3>
-      <p><strong>Matrícula:</strong> {{ alumno.matricula }}</p>
-      <p><strong>Carrera:</strong> {{ alumno.carrera }}</p>
-      <p><strong>Correo:</strong> {{ alumno.correo_contacto }}</p>
-      <hr>
-      <p class="metadata">
-        Estado: {{ alumno.status_cuenta }} | Rol: {{ alumno.metadata.rol_sistema }}
-      </p>
-    </div>
+      @if (alumnoData(); as alu) {
+        <div class="data-card">
+          <h3>{{ alu.nombre_completo }}</h3>
+          <p>Carrera: {{ alu.carrera }}</p>
+        </div>
+      }
+    }
+    
+    @default {
+      <h1 style="color: red;">Rol desconocido. Intruso detectado.</h1>
+    }
   }
-</div>
+</main>

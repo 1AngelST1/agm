@@ -1,5 +1,5 @@
 $kind: http-request
 name: New Request
-url: ""
+url: http://localhost:3002/alumnos/alu_f9006874
 method: GET
 order: 4138226991258240

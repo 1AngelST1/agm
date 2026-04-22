@@ -1,0 +1,9 @@
+$kind: http-request
+name: New Request
+url: http://localhost:3002/alumnos/202253882
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOWY3NjExZWYiLCJlbWFpbCI6ImFuZ2VsLnNhcm1pZW50b3RAYWx1bW5vLmJ1YXAubXgiLCJyb2xlIjoiYWx1bW5vIiwiaWF0IjoxNzc2ODQxMTkzLCJleHAiOjE3NzY4NDgzOTN9.Iu0N8imVltxVWEijhOmkDNlFzae7kdJXtef9wvsAsWE
+order: 3315101160522382

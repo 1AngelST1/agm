@@ -1,5 +1,16 @@
 $kind: http-request
 name: New Request
-url: ""
-method: GET
+url: http://localhost:3002/alumnos/crear
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"user_id\": \"usr_b17e8091\",\r
+
+    \  \"matricula\": \"202224429\",\r
+
+    \  \"carrera\": \"Ingeniería en Tecnologías de la Información\"\r
+
+    }"
 order: 4181288421935958

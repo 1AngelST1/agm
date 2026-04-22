@@ -5,29 +5,32 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule], // En Angular 20 ya no ponemos standalone: true
+  imports: [FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
 export class Login {
-  http = inject(HttpClient);
-  router = inject(Router);
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
   email = signal('');
+  password = signal(''); 
   error = signal('');
 
   iniciarSesion() {
-    if (!this.email()) return;
+    if (!this.email() || !this.password()) return;
     this.error.set('');
 
-    this.http.post('http://localhost:3001/auth/login', { email: this.email() }).subscribe({
+    this.http.post('http://localhost:3001/auth/login', { 
+      email: this.email(),
+      password: this.password() 
+    }).subscribe({
       next: (res: any) => {
         localStorage.setItem('token', res.access_token);
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        console.error(err);
-        this.error.set('Correo no registrado o error de red.');
+        this.error.set('Credenciales inválidas o correo no registrado.');
       }
     });
   }

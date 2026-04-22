@@ -1,43 +1,30 @@
-.login-container {
-  font-family: Arial, sans-serif;
-  max-width: 350px;
+.login-box {
+  max-width: 400px;
   margin: 100px auto;
   padding: 30px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-
-  h2 {
-    text-align: center;
-  }
-}
-
-.login-input {
-  width: 100%;
-  padding: 10px;
-  margin: 15px 0;
-  box-sizing: border-box;
-  font-size: 16px;
-}
-
-.login-button {
-  width: 100%;
-  padding: 12px;
-  background: #0056b3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s;
-
-  &:hover {
-    background: #004494;
-  }
-}
-
-.error-text {
-  color: red;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
   text-align: center;
-  margin-top: 15px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  .input-group {
+    text-align: left;
+    margin-bottom: 15px;
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    background: #003b5c; // Azul institucional BUAP
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    &:hover { background: #002d46; }
+  }
+
+  .error { color: #d9534f; margin-top: 15px; font-weight: bold; }
 }

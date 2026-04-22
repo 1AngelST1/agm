@@ -7,16 +7,20 @@ import {
   Param,
   OnModuleInit,
   NotFoundException,
+  UseGuards,
+  Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Alumno } from './alumno.entity';
 import { Observable, lastValueFrom } from 'rxjs';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 // 1. Definimos exactamente qué nos devuelve ms-auth
 interface AuthResponse {
-  id: string;
+  user_id: string; // 👈 CAMBIO 1: Antes decía "id", ahora coincide con el .proto
   name: string;
   email: string;
   role: string;
@@ -24,7 +28,15 @@ interface AuthResponse {
 
 // 2. Le decimos a TypeScript que esto devuelve un Observable de AuthResponse
 interface AuthService {
+  // Pedimos a TypeScript que mande 'userId'
   GetUserById(data: { userId: string }): Observable<AuthResponse>;
+}
+
+// 3. Definimos el tipo del usuario desde el token JWT
+interface RequestUser {
+  userId: string;
+  email: string;
+  role: string;
 }
 
 @Controller('alumnos')
@@ -40,20 +52,36 @@ export class AppController implements OnModuleInit {
     this.authService = this.client.getService<AuthService>('AuthService');
   }
 
-  // --- EL MEGA-BUSCADOR AGREGADOR ---
-  @Get(':id')
-  async getAlumnoCompleto(@Param('id') id: string) {
-    // 1. Buscamos el alumno en la base de datos propia
-    const alumnoLocal = await this.alumnoRepository.findOne({ where: { id } });
+  // --- EL MEGA-BUSCADOR AGREGADOR (AHORA PROTEGIDO Y MEJORADO) ---
+  @UseGuards(JwtAuthGuard)
+  @Get(':matricula')
+  async getAlumnoCompleto(
+    @Param('matricula') matricula: string,
+    @Request() req: { user: RequestUser },
+  ) {
+    // 1. Buscamos el alumno en la base de datos propia (POR MATRÍCULA)
+    const alumnoLocal = await this.alumnoRepository.findOne({
+      where: { matricula: matricula },
+    });
 
     if (!alumnoLocal) {
       throw new NotFoundException(
-        `El alumno con ID ${id} no existe en los registros académicos.`,
+        `El alumno con matrícula ${matricula} no existe en los registros.`,
       );
     }
 
-    // 2. Llamamos a ms-auth vía gRPC para obtener datos de la cuenta
-    // ✅ Ya no hay errores de TS porque la interfaz devuelve el Observable correcto
+    // 🚦 NUEVA REGLA DE SEGURIDAD (RBAC) - A prueba de correos con nombres
+    const usuario = req.user;
+    if (usuario.role === 'alumno') {
+      // Comparamos que el 'user_id' del expediente sea igual al ID del token ('userId' lo mapea tu JwtStrategy)
+      if (alumnoLocal.user_id !== usuario.userId) {
+        throw new UnauthorizedException(
+          '¡Intruso! Solo puedes consultar tu propia matrícula.',
+        );
+      }
+    }
+
+    // 2. Llamamos a ms-auth vía gRPC (enviando userId)
     const datosAuth = await lastValueFrom(
       this.authService.GetUserById({ userId: alumnoLocal.user_id }),
     );
@@ -61,7 +89,7 @@ export class AppController implements OnModuleInit {
     // 3. ¡Fusión total de datos!
     return {
       alumno_id: alumnoLocal.id,
-      nombre_completo: datosAuth.name, // ✅ Corregido a 'name'
+      nombre_completo: datosAuth.name,
       correo_contacto: datosAuth.email,
       matricula: alumnoLocal.matricula,
       carrera: alumnoLocal.carrera,

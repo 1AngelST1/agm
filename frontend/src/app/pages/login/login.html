@@ -1,18 +1,19 @@
-<div class="login-container">
-  <h2>🔐 Iniciar Sesión</h2>
+<div class="login-box">
+  <h2>🔐 Sistema AGM - Inicio de Sesión</h2>
   
-  <input 
-    type="email" 
-    [(ngModel)]="email" 
-    placeholder="Tu correo (ej: angel@uni.mx)" 
-    class="login-input"
-  >
+  <div class="input-group">
+    <label>Correo Institucional</label>
+    <input type="email" [(ngModel)]="email" placeholder="ejemplo@alumno.buap.mx">
+  </div>
+
+  <div class="input-group">
+    <label>Contraseña</label>
+    <input type="password" [(ngModel)]="password" placeholder="••••••••">
+  </div>
   
-  <button (click)="iniciarSesion()" class="login-button">
-    Entrar
-  </button>
+  <button (click)="iniciarSesion()">Entrar al Portal</button>
 
   @if (error()) {
-    <p class="error-text">{{ error() }}</p>
+    <p class="error">{{ error() }}</p>
   }
 </div>
