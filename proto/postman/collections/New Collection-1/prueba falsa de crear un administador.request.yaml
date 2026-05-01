@@ -1,0 +1,16 @@
+$kind: http-request
+name: prueba falsa de crear un administador
+url: http://localhost:3001/auth/crear
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"Admin Pirata\",\r
+
+    \  \"email\": \"pirata@admin.buap.mx\",\r
+
+    \  \"password\": \"hacker123\"\r
+
+    }"
+order: 4381813651106177

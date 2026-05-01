@@ -3,20 +3,22 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 describe('AppController', () => {
+  let appController: AppController;
+
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [AppService],
     }).compile();
 
-    module.get<AppController>(AppController);
-    module.get<AppService>(AppService);
+    appController = app.get<AppController>(AppController);
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      const result = 'Hello World!';
-      expect(result).toBe('Hello World!');
+    it('should return "ms-calificaciones está funcionando"', () => {
+      expect(appController.getHello()).toEqual({
+        message: 'ms-calificaciones está funcionando',
+      });
     });
   });
 });

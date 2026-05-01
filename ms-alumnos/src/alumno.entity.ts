@@ -18,6 +18,6 @@ export class Alumno {
   @BeforeInsert()
   generateId() {
     const randomCode = randomBytes(4).toString('hex');
-    this.id = `alu_${randomCode}`; // ¡Prefijo exclusivo para alumnos!
+    this.id = `alu_${randomCode}`;
   }
 }

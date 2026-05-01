@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
@@ -20,8 +19,6 @@ async function bootstrap() {
     },
   );
   await grpcApp.listen();
-
-  // --- LOS MENSAJES AL FINAL PARA QUE ESTÉN JUNTOS ---
   console.log('ms-auth REST escuchando en puerto 3001');
   console.log('ms-auth gRPC escuchando en puerto 5000');
 }

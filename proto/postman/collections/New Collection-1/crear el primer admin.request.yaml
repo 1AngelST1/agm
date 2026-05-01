@@ -1,0 +1,16 @@
+$kind: http-request
+name: crear el primer admin
+url: http://localhost:3001/auth/crear-admin-inicial
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"Super Admin BUAP\",\r
+
+    \  \"email\": \"admin@admin.buap.mx\",\r
+
+    \  \"password\": \"passwordSeguro123\"\r
+
+    }"
+order: 4019546563103997

@@ -6,11 +6,11 @@ body:
   type: json
   content: "{\r
 
-    \  \"name\": \"Angel Sarmiento Totolhua\",\r
+    \  \"name\": \"Heidy Mariana Santiago Otiz\",\r
 
-    \  \"email\": \"angel.sarmientot@alumno.buap.mx\",\r
+    \  \"email\": \"heidy.santiagoO@alumno.buap.mx\",\r
 
-    \  \"password\": \"070525\"\r
+    \  \"password\": \"123\"\r
 
     }"
 order: 1776837077516

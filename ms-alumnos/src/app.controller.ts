@@ -20,7 +20,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 // 1. Definimos exactamente qué nos devuelve ms-auth
 interface AuthResponse {
-  user_id: string; // 👈 CAMBIO 1: Antes decía "id", ahora coincide con el .proto
+  user_id: string;
   name: string;
   email: string;
   role: string;
@@ -28,7 +28,6 @@ interface AuthResponse {
 
 // 2. Le decimos a TypeScript que esto devuelve un Observable de AuthResponse
 interface AuthService {
-  // Pedimos a TypeScript que mande 'userId'
   GetUserById(data: { userId: string }): Observable<AuthResponse>;
 }
 
@@ -52,7 +51,7 @@ export class AppController implements OnModuleInit {
     this.authService = this.client.getService<AuthService>('AuthService');
   }
 
-  // --- EL MEGA-BUSCADOR AGREGADOR (AHORA PROTEGIDO Y MEJORADO) ---
+  // --- EL MEGA-BUSCADOR DE ALUMNOS ---
   @UseGuards(JwtAuthGuard)
   @Get(':matricula')
   async getAlumnoCompleto(
@@ -70,7 +69,7 @@ export class AppController implements OnModuleInit {
       );
     }
 
-    // 🚦 NUEVA REGLA DE SEGURIDAD (RBAC) - A prueba de correos con nombres
+    //  NUEVA REGLA DE SEGURIDAD (RBAC) - A prueba de correos con nombres
     const usuario = req.user;
     if (usuario.role === 'alumno') {
       // Comparamos que el 'user_id' del expediente sea igual al ID del token ('userId' lo mapea tu JwtStrategy)

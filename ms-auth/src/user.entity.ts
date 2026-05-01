@@ -23,7 +23,6 @@ export class User {
   generateId() {
     // Genera un texto aleatorio cortito (ej. '8f4c2a1b')
     const randomCode = randomBytes(4).toString('hex');
-    // Le pega el prefijo de tu microservicio
     this.id = `usr_${randomCode}`;
   }
 }
