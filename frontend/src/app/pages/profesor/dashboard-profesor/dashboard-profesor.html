@@ -1,1 +1,41 @@
-<p>dashboard-profesor works!</p>
+<div class="dashboard-container" *ngIf="!cargando(); else loader">
+  <header>
+    <h1>👨‍🏫 Portal del Docente</h1>
+    <div class="user-info">
+      <p><strong>{{ usuario()?.email }}</strong></p>
+      <p>Rol: {{ usuario()?.rol }}</p>
+      <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <!-- Mostrar error si existe -->
+  <div class="error-message" *ngIf="error()">
+    ⚠️ {{ error() }}
+  </div>
+
+  <!-- Mis Grupos -->
+  <div class="grupos-section" *ngIf="misGrupos()">
+    <h2>📚 Mis Grupos</h2>
+    <p class="total"><strong>Total de grupos:</strong> {{ misGrupos()?.total }}</p>
+
+    <div class="grupos-grid" *ngIf="misGrupos()?.grupos && misGrupos()?.grupos.length > 0">
+      <div class="grupo-card" *ngFor="let grupo of misGrupos()?.grupos">
+        <h3>{{ grupo.materia?.nombre }}</h3>
+        <p><strong>NRC:</strong> {{ grupo.nrc }}</p>
+        <p><strong>Sección:</strong> {{ grupo.seccion }}</p>
+        <p><strong>Período:</strong> {{ grupo.periodo }}</p>
+        <button class="btn-secondary">Ver Alumnos</button>
+      </div>
+    </div>
+
+    <div *ngIf="!misGrupos()?.grupos || misGrupos()?.grupos.length === 0" class="no-data">
+      <p>No tienes grupos asignados en este período.</p>
+    </div>
+  </div>
+</div>
+
+<ng-template #loader>
+  <div class="loader">
+    <p>⏳ Cargando tus grupos...</p>
+  </div>
+</ng-template>

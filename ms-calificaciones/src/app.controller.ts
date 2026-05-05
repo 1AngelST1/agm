@@ -315,7 +315,7 @@ export class AppController implements OnModuleInit {
       );
     }
 
-    const docenteId = req.user?.sub;
+    const docenteId = req.user.userId;
 
     const misGrupos = await this.grupoRepository.find({
       where: { docente_id: docenteId },
@@ -344,7 +344,7 @@ export class AppController implements OnModuleInit {
       );
     }
 
-    const docenteId = req.user?.sub;
+    const docenteId = req.user.userId;
 
     const grupo = await this.grupoRepository.findOne({
       where: { nrc },

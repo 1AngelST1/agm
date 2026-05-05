@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  BeforeInsert,
 } from 'typeorm';
 import { Grupo } from './grupo.entity';
 
@@ -11,6 +12,9 @@ import { Grupo } from './grupo.entity';
 export class Calificacion {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Column({ unique: true })
+  codigo!: string; // Ej. 'cal_a1b2c3d4'
 
   @ManyToOne(() => Grupo)
   @JoinColumn({ name: 'nrc_grupo' })
@@ -24,4 +28,14 @@ export class Calificacion {
 
   @Column({ default: 'Cursando' })
   estatus!: string; // Cursando, Aprobado, Reprobado
+
+  // 🏷️ Generar código con prefijo antes de guardar
+  @BeforeInsert()
+  generarCodigo() {
+    if (!this.codigo) {
+      // Generar hash corto de 8 caracteres del UUID
+      const shortHash = this.id.substring(0, 8);
+      this.codigo = `cal_${shortHash}`;
+    }
+  }
 }
