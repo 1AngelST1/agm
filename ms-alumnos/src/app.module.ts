@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Alumno } from './alumno.entity';
 import { JwtStrategy } from './auth/jwt.strategy';
+import { join } from 'path'; // 👈 1. IMPORTAMOS ESTO PARA MANEJAR RUTAS
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { JwtStrategy } from './auth/jwt.strategy';
         transport: Transport.GRPC,
         options: {
           package: 'auth',
-          protoPath: '/app/proto/auth.proto',
+          // 👈 2. AQUÍ CALCULAMOS LA RUTA DINÁMICAMENTE
+          protoPath: join(process.cwd(), '../proto/auth.proto'),
           url: `${process.env.AUTH_GRPC_HOST || 'localhost'}:${process.env.AUTH_GRPC_PORT || '5000'}`,
         },
       },

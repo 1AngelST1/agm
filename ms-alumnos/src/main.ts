@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { join } from 'path'; // 👈 1. IMPORTAMOS JOIN PARA MANEJAR RUTAS
 
 async function bootstrap() {
   // 1. Iniciamos la app tradicional para el REST API
@@ -12,7 +13,8 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'alumnos', // Coincide con tu alumnos.proto
-      protoPath: '/app/proto/alumnos.proto',
+      // 👇 2. AQUÍ CALCULAMOS LA RUTA DINÁMICAMENTE
+      protoPath: join(process.cwd(), '../proto/alumnos.proto'),
       url: 'localhost:5001', // ms-auth usa 5000, ms-alumnos usará 5001
     },
   });
