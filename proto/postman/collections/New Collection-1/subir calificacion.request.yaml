@@ -1,0 +1,16 @@
+$kind: http-request
+name: subir calificacion
+url: http://localhost:3003/calificaciones/calificar
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nrc_grupo\": \"50130\",\r
+
+    \  \"matricula_alumno\": \"202253882\",\r
+
+    \  \"calificacion_ordinaria\": 10\r
+
+    }"
+order: 4502946287248772

@@ -1,0 +1,20 @@
+$kind: http-request
+name: abrir grupo
+url: http://localhost:3003/calificaciones/grupo
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nrc\": \"50130\",\r
+
+    \  \"materia_clave\": \"ITIS 260\",\r
+
+    \  \"docente_id\": \"usr_f1c3c24c\", \r
+
+    \  \"seccion\": \"001\",\r
+
+    \  \"periodo\": \"Primavera 2026\"\r
+
+    }"
+order: 4502944774507319

@@ -1,5 +1,5 @@
 $kind: http-request
-name: obtener el token JWT (login)
+name: obtener el token JWT (login) admin
 url: http://localhost:3001/auth/login
 method: POST
 body:
