@@ -1,0 +1,91 @@
+.dashboard-container {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #007bff;
+}
+
+header h1 {
+  margin: 0;
+  color: #333;
+}
+
+.btn-logout {
+  padding: 10px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-logout:hover {
+  background: #c82333;
+}
+
+.info-card {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-left: 4px solid #007bff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.info-card h2 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+}
+
+.datos-principales {
+  display: grid;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.datos-principales p {
+  margin: 0;
+  color: #555;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border-left: 4px solid #dc3545;
+}
+
+.no-data {
+  background: #d1ecf1;
+  color: #0c5460;
+  padding: 15px;
+  border-radius: 4px;
+  border-left: 4px solid #17a2b8;
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+

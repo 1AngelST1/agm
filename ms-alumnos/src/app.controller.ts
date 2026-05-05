@@ -51,6 +51,42 @@ export class AppController implements OnModuleInit {
     this.authService = this.client.getService<AuthService>('AuthService');
   }
 
+  // --- OBTENER MIS DATOS (Alumno actual autenticado) ---
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async obtenerMisDatos(@Request() req: { user: RequestUser }) {
+    const usuario = req.user;
+    // 1. Buscamos el alumno en la base de datos propia por USER_ID
+    const alumnoLocal = await this.alumnoRepository.findOne({
+      where: { user_id: usuario.userId },
+    });
+
+    if (!alumnoLocal) {
+      throw new NotFoundException(
+        `No se encontró un registro de alumno para tu usuario.`,
+      );
+    }
+
+    // 2. Llamamos a ms-auth vía gRPC para obtener datos adicionales
+    const datosAuth = await lastValueFrom(
+      this.authService.GetUserById({ userId: alumnoLocal.user_id }),
+    );
+
+    // 3. Fusión de datos
+    return {
+      alumno_id: alumnoLocal.id,
+      nombre_completo: datosAuth.name,
+      correo_contacto: datosAuth.email,
+      matricula: alumnoLocal.matricula,
+      carrera: alumnoLocal.carrera,
+      status_cuenta: 'Activo',
+      metadata: {
+        rol_sistema: datosAuth.role,
+        auth_ref: alumnoLocal.user_id,
+      },
+    };
+  }
+
   // --- EL MEGA-BUSCADOR DE ALUMNOS ---
   @UseGuards(JwtAuthGuard)
   @Get(':matricula')

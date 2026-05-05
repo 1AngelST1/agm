@@ -1,0 +1,34 @@
+<div class="dashboard-container" *ngIf="!cargando(); else loader">
+  <header>
+    <h1>🎓 Portal del Alumno</h1>
+    <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
+  </header>
+
+  <!-- Mostrar error si existe -->
+  <div class="error-message" *ngIf="error()">
+    ⚠️ {{ error() }}
+  </div>
+
+  <!-- Mostrar datos del alumno -->
+  <div class="info-card" *ngIf="datosAlumno()">
+    <h2>Bienvenido, {{ datosAlumno()?.nombre_completo }}</h2>
+    
+    <div class="datos-principales">
+      <p><strong>Correo:</strong> {{ datosAlumno()?.correo_contacto }}</p>
+      <p><strong>Matrícula:</strong> {{ datosAlumno()?.matricula }}</p>
+      <p><strong>Carrera:</strong> {{ datosAlumno()?.carrera }}</p>
+      <p><strong>Estado:</strong> {{ datosAlumno()?.status_cuenta }}</p>
+    </div>
+  </div>
+
+  <!-- Mensaje si no hay datos -->
+  <div class="no-data" *ngIf="!datosAlumno()">
+    <p>No se encontraron tus datos. Intenta recargar la página.</p>
+  </div>
+</div>
+
+<ng-template #loader>
+  <div class="loader">
+    <p>⏳ Cargando tu información académica...</p>
+  </div>
+</ng-template>
