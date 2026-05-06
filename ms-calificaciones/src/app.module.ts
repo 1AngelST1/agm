@@ -10,23 +10,17 @@ import { Grupo } from './grupo.entity';
 import { Calificacion } from './calificacion.entity';
 import { JwtStrategy } from './auth/jwt.strategy';
 
-// Determinar la ruta correcta del proto según el entorno
+// Función para obtener la ruta de los .proto
 const getProtoPath = (protoFile: string) => {
-  // En desarrollo: ../../proto/{protoFile} (salir de ms-calificaciones/dist)
-  // En producción Docker: /app/proto/{protoFile}
   if (process.env.NODE_ENV === 'production') {
     return `/app/proto/${protoFile}`;
   }
-  // En desarrollo, usar ruta relativa desde el directorio dist
   return path.join(__dirname, `../../proto/${protoFile}`);
 };
 
 @Module({
   imports: [
-    // Configurar Passport para JWT
     PassportModule,
-
-    // Conexión a BD propia para ms-calificaciones
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -37,10 +31,9 @@ const getProtoPath = (protoFile: string) => {
       entities: [Materia, Grupo, Calificacion],
       synchronize: true,
     }),
-    // ¡ESTA ES LA LÍNEA MÁGICA QUE FALTABA!
     TypeOrmModule.forFeature([Materia, Grupo, Calificacion]),
 
-    // 📞 CONEXIONES gRPC HACIA LOS OTROS MICROSERVICIOS
+    // 📞 REGISTRO DE TODOS LOS CLIENTES gRPC
     ClientsModule.register([
       {
         name: 'AUTH_PACKAGE',
@@ -58,6 +51,16 @@ const getProtoPath = (protoFile: string) => {
           package: 'alumnos',
           protoPath: getProtoPath('alumnos.proto'),
           url: `${process.env.ALUMNOS_GRPC_HOST || 'localhost'}:${process.env.ALUMNOS_GRPC_PORT || '5001'}`,
+        },
+      },
+      // 🚀 CONEXIÓN HACIA NOTIFICACIONES
+      {
+        name: 'NOTIFICACIONES_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'notificaciones',
+          protoPath: getProtoPath('notificaciones.proto'),
+          url: `${process.env.NOTIF_GRPC_HOST || 'localhost'}:${process.env.NOTIF_GRPC_PORT || '5003'}`,
         },
       },
     ]),

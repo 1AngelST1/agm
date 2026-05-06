@@ -30,4 +30,5 @@ message AlumnoResponse {
   string alumno_id = 1;
   string nombre = 2;
   string matricula = 3;
+  string user_id = 4;
 }

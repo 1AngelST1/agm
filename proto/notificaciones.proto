@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package notificaciones;
+
+service NotificacionesService {
+  rpc SendBienvenida (NotificacionRequest) returns (NotificacionResponse) {}
+  rpc SendBajaNotif (NotificacionRequest) returns (NotificacionResponse) {}
+  rpc SendActualizacion (ActualizacionRequest) returns (NotificacionResponse) {}
+}
+
+message NotificacionRequest {
+  string usuario_id = 1;
+  string materia_id = 2;
+  string email_destino = 3; 
+}
+
+message ActualizacionRequest {
+  string usuario_id = 1;
+  string materia_id = 2;
+  string email_destino = 3;
+  float nueva_nota = 4;
+}
+
+message NotificacionResponse {
+  bool success = 1;
+  string message = 2;
+}

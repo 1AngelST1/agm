@@ -1,5 +1,9 @@
 $kind: http-request
 name: eliminar calificacion
-url: ""
-method: GET
+url: http://localhost:3003/calificaciones/50130/202253882
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfYWJmYTQzMTYiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3ODAzNTgxNSwiZXhwIjoxNzc4MDQzMDE1fQ.5b9Rn6mx3atLsjer1YfbOxoOF1yXyIhvlxYZXPzGulw
 order: 4412667943210795
