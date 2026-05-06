@@ -1,0 +1,5 @@
+$kind: http-request
+name: eliminar calificacion
+url: ""
+method: GET
+order: 4412667943210795

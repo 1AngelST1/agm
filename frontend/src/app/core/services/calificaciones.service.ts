@@ -20,6 +20,16 @@ export class CalificacionesService {
     );
   }
 
+  // 👥 Obtener alumnos de un grupo
+  obtenerAlumnosDelGrupo(nrc: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/grupo/${nrc}/alumnos`).pipe(
+      catchError((error) => {
+        console.error('Error al obtener alumnos del grupo:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   // Obtener todos los grupos
   obtenerGrupos(): Observable<any> {
     return this.http.get(`${this.apiUrl}/grupos`).pipe(
@@ -45,6 +55,56 @@ export class CalificacionesService {
     return this.http.get(`${this.apiUrl}/materias`).pipe(
       catchError((error) => {
         console.error('Error al obtener materias:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 📝 CREAR calificación (Insertar nueva calificación)
+  crearCalificacion(data: { nrc_grupo: string; matricula_alumno: string; calificacion_ordinaria: number }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/calificar`, data).pipe(
+      catchError((error) => {
+        console.error('Error al crear calificación:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // ✏️ ACTUALIZAR calificación (Editar)
+  actualizarCalificacion(nrc: string, matricula: string, data: { calificacion_ordinaria: number }): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${nrc}/${matricula}`, data).pipe(
+      catchError((error) => {
+        console.error('Error al actualizar calificación:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 🗑️ ELIMINAR calificación
+  eliminarCalificacion(nrc: string, matricula: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${nrc}/${matricula}`).pipe(
+      catchError((error) => {
+        console.error('Error al eliminar calificación:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 📖 OBTENER MI KARDEX (Para alumnos - Ver sus propias calificaciones)
+  obtenerMiKardex(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/kardex/mi-kardex`).pipe(
+      catchError((error) => {
+        console.error('Error al obtener mi kardex:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 📖 OBTENER KARDEX DE OTRO ALUMNO (Para admins y docentes)
+  obtenerKardexAlumno(matricula: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/kardex/${matricula}`).pipe(
+      catchError((error) => {
+        console.error('Error al obtener kardex del alumno:', error);
         return throwError(() => error);
       })
     );

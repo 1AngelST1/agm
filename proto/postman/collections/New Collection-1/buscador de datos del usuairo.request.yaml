@@ -1,9 +1,0 @@
-$kind: http-request
-name: buscador de datos del usuairo
-url: http://localhost:3002/alumnos/202253871
-method: GET
-auth:
-  credentials:
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfMDEwMThkNjYiLCJlbWFpbCI6ImhlaWR5LnNhbnRpYWdvT0BhbHVtbm8uYnVhcC5teCIsInJvbGUiOiJhbHVtbm8iLCJpYXQiOjE3NzY4OTY2ODEsImV4cCI6MTc3NjkwMzg4MX0.0v7jyPTQhqW7WWXTFttOVmLy6NlTfWsHQ3VuqsQqF44
-  type: bearer
-order: 3315101160522382

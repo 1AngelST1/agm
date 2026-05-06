@@ -1,41 +1,28 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
+  PrimaryColumn,
   ManyToOne,
   JoinColumn,
-  BeforeInsert,
 } from 'typeorm';
 import { Grupo } from './grupo.entity';
 
 @Entity('calificaciones')
 export class Calificacion {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryColumn()
+  matricula_alumno!: string; // Ej. '202253882' (Llave primaria 1)
 
-  @Column({ unique: true })
-  codigo!: string; // Ej. 'cal_a1b2c3d4'
+  @PrimaryColumn()
+  nrc_grupo!: string; // Ej. '50130' (Llave primaria 2)
 
   @ManyToOne(() => Grupo)
   @JoinColumn({ name: 'nrc_grupo' })
   grupo!: Grupo;
-
-  @Column()
-  matricula_alumno!: string; // Ej. '202253882' (Tu matrícula)
 
   @Column('decimal', { precision: 4, scale: 2, nullable: true })
   calificacion_ordinaria!: number; // Ej. 8.50
 
   @Column({ default: 'Cursando' })
   estatus!: string; // Cursando, Aprobado, Reprobado
-
-  // 🏷️ Generar código con prefijo antes de guardar
-  @BeforeInsert()
-  generarCodigo() {
-    if (!this.codigo) {
-      // Generar hash corto de 8 caracteres del UUID
-      const shortHash = this.id.substring(0, 8);
-      this.codigo = `cal_${shortHash}`;
-    }
-  }
+  // ✨ Un alumno solo puede tener UNA calificación por grupo (PK compuesta)
 }

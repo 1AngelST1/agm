@@ -1,0 +1,14 @@
+$kind: http-request
+name: prueba  incio de seccion de alumno
+url: http://localhost:3001/auth/login
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"email\": \"angel.sarmientot@alumno.buap.mx\",\r
+
+    \  \"password\": \"070525\"\r
+
+    }"
+order: 1778020760476

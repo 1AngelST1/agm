@@ -1,7 +1,10 @@
-<div class="dashboard-container" *ngIf="!cargando(); else loader">
+<div class="dashboard-container" *ngIf="!cargandoAlumno() && !cargandoKardex(); else loader">
   <header>
     <h1>🎓 Portal del Alumno</h1>
-    <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
+    <div class="user-info">
+      <p><strong>{{ usuario()?.email }}</strong></p>
+      <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
+    </div>
   </header>
 
   <!-- Mostrar error si existe -->
@@ -14,14 +17,83 @@
     <h2>Bienvenido, {{ datosAlumno()?.nombre_completo }}</h2>
     
     <div class="datos-principales">
-      <p><strong>Correo:</strong> {{ datosAlumno()?.correo_contacto }}</p>
-      <p><strong>Matrícula:</strong> {{ datosAlumno()?.matricula }}</p>
-      <p><strong>Carrera:</strong> {{ datosAlumno()?.carrera }}</p>
-      <p><strong>Estado:</strong> {{ datosAlumno()?.status_cuenta }}</p>
+      <p><strong>📧 Correo:</strong> {{ datosAlumno()?.correo_contacto }}</p>
+      <p><strong>🆔 Matrícula:</strong> {{ datosAlumno()?.matricula }}</p>
+      <p><strong>🎓 Carrera:</strong> {{ datosAlumno()?.carrera }}</p>
+      <p><strong>✅ Estado:</strong> {{ datosAlumno()?.status_cuenta }}</p>
     </div>
   </div>
 
-  <!-- Mensaje si no hay datos -->
+  <!-- SECCIÓN DE KARDEX -->
+  <div class="kardex-section">
+    <h2>📚 Mi Kardex (Calificaciones)</h2>
+
+    <!-- Mostrar error del kardex si existe -->
+    <div class="error-message" *ngIf="errorKardex()">
+      ⚠️ {{ errorKardex() }}
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="estadisticas" *ngIf="kardex() && kardex().length > 0">
+      <div class="stat">
+        <span class="label">Total Materias</span>
+        <span class="valor">{{ kardex().length }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Promedio</span>
+        <span class="valor">{{ calcularPromedio() }}</span>
+      </div>
+      <div class="stat aprobado">
+        <span class="label">Aprobadas</span>
+        <span class="valor">{{ contar('Aprobado') }}</span>
+      </div>
+      <div class="stat reprobado">
+        <span class="label">Reprobadas</span>
+        <span class="valor">{{ contar('Reprobado') }}</span>
+      </div>
+      <div class="stat cursando">
+        <span class="label">En Curso</span>
+        <span class="valor">{{ contar('Cursando') }}</span>
+      </div>
+    </div>
+
+    <!-- Tabla de calificaciones -->
+    <div class="kardex-table" *ngIf="kardex() && kardex().length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Materia</th>
+            <th>NRC</th>
+            <th>Sección</th>
+            <th>Período</th>
+            <th>Calificación</th>
+            <th>Estatus</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let calificacion of kardex()" [ngClass]="'estatus-' + calificacion.estatus?.toLowerCase()">
+            <td class="materia">{{ calificacion.grupo?.materia?.nombre || 'N/A' }}</td>
+            <td>{{ calificacion.nrc_grupo }}</td>
+            <td>{{ calificacion.grupo?.seccion || 'N/A' }}</td>
+            <td>{{ calificacion.grupo?.periodo || 'N/A' }}</td>
+            <td class="calificacion">{{ calificacion.calificacion_ordinaria }}</td>
+            <td class="estatus">
+              <span class="badge" [ngClass]="'badge-' + calificacion.estatus?.toLowerCase()">
+                {{ calificacion.estatus }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mensaje si no hay calificaciones -->
+    <div class="no-data" *ngIf="kardex() && kardex().length === 0">
+      <p>📭 Aún no tienes calificaciones registradas en tu kardex.</p>
+    </div>
+  </div>
+
+  <!-- Mensaje si no hay datos del alumno -->
   <div class="no-data" *ngIf="!datosAlumno()">
     <p>No se encontraron tus datos. Intenta recargar la página.</p>
   </div>

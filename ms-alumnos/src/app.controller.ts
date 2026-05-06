@@ -11,6 +11,7 @@ import {
   Request,
   UnauthorizedException,
 } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -147,5 +148,47 @@ export class AppController implements OnModuleInit {
   ) {
     const nuevoAlumno = this.alumnoRepository.create(body);
     return await this.alumnoRepository.save(nuevoAlumno);
+  }
+
+  // 📡 MÉTODO gRPC: Validar alumno por matrícula (usado por ms-calificaciones)
+  @GrpcMethod('AlumnosService', 'GetAlumnoByMatricula')
+  async getAlumnoByMatricula(data: { matricula: string }) {
+    const alumno = await this.alumnoRepository.findOne({
+      where: { matricula: data.matricula },
+    });
+
+    if (!alumno) {
+      throw new NotFoundException(
+        `Alumno con matrícula ${data.matricula} no encontrado`,
+      );
+    }
+
+    return {
+      alumno_id: alumno.id,
+      matricula: alumno.matricula,
+      user_id: alumno.user_id,
+      carrera: alumno.carrera,
+    };
+  }
+
+  // 📡 MÉTODO gRPC: Obtener alumno por user_id (usado por ms-calificaciones para kardex)
+  @GrpcMethod('AlumnosService', 'GetAlumnoByUserId')
+  async getAlumnoByUserId(data: { user_id: string }) {
+    const alumno = await this.alumnoRepository.findOne({
+      where: { user_id: data.user_id },
+    });
+
+    if (!alumno) {
+      throw new NotFoundException(
+        `Alumno con user_id ${data.user_id} no encontrado`,
+      );
+    }
+
+    return {
+      alumno_id: alumno.id,
+      matricula: alumno.matricula,
+      user_id: alumno.user_id,
+      carrera: alumno.carrera,
+    };
   }
 }

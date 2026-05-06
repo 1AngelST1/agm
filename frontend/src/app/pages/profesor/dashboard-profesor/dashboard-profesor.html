@@ -24,12 +24,195 @@
         <p><strong>NRC:</strong> {{ grupo.nrc }}</p>
         <p><strong>Sección:</strong> {{ grupo.seccion }}</p>
         <p><strong>Período:</strong> {{ grupo.periodo }}</p>
-        <button class="btn-secondary">Ver Alumnos</button>
+        <div class="card-buttons">
+          <button (click)="verAlumnos(grupo)" class="btn-secondary">Ver Alumnos</button>
+          <button (click)="abrirModalInsertar(grupo)" class="btn-primary">+ Calificación</button>
+        </div>
       </div>
     </div>
 
     <div *ngIf="!misGrupos()?.grupos || misGrupos()?.grupos.length === 0" class="no-data">
       <p>No tienes grupos asignados en este período.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE ALUMNOS -->
+<div class="modal-overlay" *ngIf="mostrarModalAlumnos()" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>👥 Lista de Alumnos</h2>
+      <button class="btn-close" (click)="cerrarModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grupo-info" *ngIf="grupoSeleccionado()">
+        <p><strong>Materia:</strong> {{ grupoSeleccionado()?.materia?.nombre }}</p>
+        <p><strong>NRC:</strong> {{ grupoSeleccionado()?.nrc }}</p>
+        <p><strong>Sección:</strong> {{ grupoSeleccionado()?.seccion }}</p>
+      </div>
+
+      <div *ngIf="cargandoAlumnos()" class="loading">
+        ⏳ Cargando lista de alumnos...
+      </div>
+
+      <div *ngIf="!cargandoAlumnos() && alumnosDelGrupo()?.alumnos" class="alumnos-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Matrícula</th>
+              <th>Calificación</th>
+              <th>Estatus</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let alumno of alumnosDelGrupo()?.alumnos">
+              <td>{{ alumno.matricula_alumno }}</td>
+              <td>{{ alumno.calificacion_ordinaria || 'N/A' }}</td>
+              <td>{{ alumno.estatus }}</td>
+              <td class="acciones">
+                <button (click)="abrirModalEditar(alumno)" class="btn-edit">✏️ Editar</button>
+                <button (click)="eliminarCalificacion(alumno)" class="btn-delete">🗑️ Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="total-alumnos"><strong>Total:</strong> {{ alumnosDelGrupo()?.totalAlumnos }} alumnos</p>
+      </div>
+
+      <div *ngIf="!cargandoAlumnos() && (!alumnosDelGrupo()?.alumnos || alumnosDelGrupo()?.alumnos.length === 0)" class="no-alumnos">
+        <p>No hay alumnos registrados en este grupo.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE INSERTAR CALIFICACIÓN -->
+<div class="modal-overlay" *ngIf="mostrarModalInsertar()" (click)="cerrarModalInsertar()">
+  <div class="modal-content modal-formulario" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>➕ Insertar Calificación</h2>
+      <button class="btn-close" (click)="cerrarModalInsertar()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="errorInsertar()" class="error-message">
+        ❌ {{ errorInsertar() }}
+      </div>
+
+      <form (ngSubmit)="guardarCalificacion()">
+        <div class="form-group">
+          <label for="nrc">NRC del Grupo:</label>
+          <input 
+            type="text" 
+            id="nrc" 
+            [value]="formInsertar().nrc_grupo"
+            readonly 
+            class="input-readonly"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="matricula">Matrícula del Alumno:</label>
+          <input 
+            type="text" 
+            id="matricula" 
+            [value]="formInsertar().matricula_alumno"
+            (input)="actualizarMatriculaInsertar($any($event.target).value)"
+            placeholder="Ej: 202253882"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="calificacion">Calificación (0-10):</label>
+          <input 
+            type="number" 
+            id="calificacion" 
+            [value]="formInsertar().calificacion_ordinaria"
+            (input)="actualizarCalificacionInsertar(+$any($event.target).value)"
+            min="0" 
+            max="10" 
+            step="0.5"
+            required
+          >
+        </div>
+
+        <div class="form-actions">
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="guardandoInsertar()"
+          >
+            {{ guardandoInsertar() ? '⏳ Guardando...' : '💾 Guardar Calificación' }}
+          </button>
+          <button 
+            type="button" 
+            class="btn-secondary"
+            (click)="cerrarModalInsertar()"
+            [disabled]="guardandoInsertar()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE EDITAR CALIFICACIÓN -->
+<div class="modal-overlay" *ngIf="mostrarModalEditar()" (click)="cerrarModalEditar()">
+  <div class="modal-content modal-formulario" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>✏️ Editar Calificación</h2>
+      <button class="btn-close" (click)="cerrarModalEditar()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="errorEditar()" class="error-message">
+        ❌ {{ errorEditar() }}
+      </div>
+
+      <div class="alumno-info" *ngIf="calificacionEditando()">
+        <p><strong>Matrícula:</strong> {{ calificacionEditando()?.matricula_alumno }}</p>
+        <p><strong>Calificación Actual:</strong> {{ calificacionEditando()?.calificacion_ordinaria }}</p>
+        <p><strong>Estatus Actual:</strong> {{ calificacionEditando()?.estatus }}</p>
+      </div>
+
+      <form (ngSubmit)="actualizarCalificacion()">
+        <div class="form-group">
+          <label for="calificacionEdit">Nueva Calificación (0-10):</label>
+          <input 
+            type="number" 
+            id="calificacionEdit" 
+            [value]="formEditar().calificacion_ordinaria"
+            (input)="actualizarCalificacionEditar(+$any($event.target).value)"
+            min="0" 
+            max="10" 
+            step="0.5"
+            required
+          >
+        </div>
+
+        <div class="form-actions">
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="guardandoEditar()"
+          >
+            {{ guardandoEditar() ? '⏳ Actualizando...' : '💾 Actualizar Calificación' }}
+          </button>
+          <button 
+            type="button" 
+            class="btn-secondary"
+            (click)="cerrarModalEditar()"
+            [disabled]="guardandoEditar()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

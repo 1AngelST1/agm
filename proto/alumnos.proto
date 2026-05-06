@@ -6,10 +6,24 @@ package alumnos;
 service AlumnosService {
   // Obtiene los datos de un alumno por su ID
   rpc GetAlumnoById (GetAlumnoRequest) returns (AlumnoResponse);
+  
+  // Obtiene los datos de un alumno por su matrícula (usado por ms-calificaciones)
+  rpc GetAlumnoByMatricula (GetAlumnoByMatriculaRequest) returns (AlumnoResponse);
+
+  // Obtiene los datos de un alumno por su user_id (usado por ms-calificaciones para kardex)
+  rpc GetAlumnoByUserId (GetAlumnoByUserIdRequest) returns (AlumnoResponse);
 }
 
 message GetAlumnoRequest {
   string alumno_id = 1;
+}
+
+message GetAlumnoByMatriculaRequest {
+  string matricula = 1;
+}
+
+message GetAlumnoByUserIdRequest {
+  string user_id = 1;
 }
 
 message AlumnoResponse {

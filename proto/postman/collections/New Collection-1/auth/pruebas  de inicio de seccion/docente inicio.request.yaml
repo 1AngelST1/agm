@@ -1,16 +1,14 @@
 $kind: http-request
-name: crear docente
-url: http://localhost:3001/auth/crear
+name: docente inicio
+url: http://localhost:3001/auth/login
 method: POST
 body:
   type: json
   content: "{\r
-
-    \  \"name\": \"Profesor Juan Pérez\",\r
 
     \  \"email\": \"juan.perez@correo.buap.mx\",\r
 
     \  \"password\": \"Profe123\"\r
 
     }"
-order: 4267409923772005
+order: 4299888236583759
