@@ -5,3 +5,7 @@ workspace:
 localResources:
   specs:
     - ..\auth.proto
+
+cloudResources:
+  collections:
+    ..\postman\collections\🛡️ AGM Microservicios - Testing RBAC-gRPC Completo: e559cdee-af43-4db7-8984-8d45c690dd32

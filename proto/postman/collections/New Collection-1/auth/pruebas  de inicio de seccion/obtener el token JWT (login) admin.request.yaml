@@ -6,9 +6,9 @@ body:
   type: json
   content: "{\r
 
-    \  \"email\": \"heidy.santiagoO@alumno.buap.mx\",\r
+    \  \"email\": \"admin@admin.buap.mx\",\r
 
-    \  \"password\": \"123\"\r
+    \  \"password\": \"admipassword\"\r
 
     }"
 order: 2383018273091995

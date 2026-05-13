@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  ✅ Notifica baja de asignatura (admin, docente)
+
+  **Esperado:** 200 OK + { success: true, message: 'Baja notificada' }
+url: http://localhost:3004/notificaciones/baja
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{TOKEN_ADMIN}}
+body:
+  type: text
+  content: |-
+    {
+      "usuario_id": "202253882",
+      "materia_id": "ITIS-260",
+      "email_destino": "angel.sarmientot@alumno.buap.mx"
+    }
+order: 2000

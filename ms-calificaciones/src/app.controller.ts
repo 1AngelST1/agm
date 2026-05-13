@@ -9,13 +9,11 @@ import {
   OnModuleInit,
   NotFoundException,
   BadRequestException,
-  UnauthorizedException,
   Inject,
   UseGuards,
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthGuard } from '@nestjs/passport';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -30,9 +28,12 @@ import {
   CreateCalificacionDto,
   UpdateCalificacionDto,
 } from './dtos';
+import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
-  user: { userId: string; email: string; role: 'admin' | 'docente' | 'alumno' };
+  user: { user_id: string; email: string; role: 'admin' | 'docente' | 'alumno' };
 }
 
 interface AlumnosServiceClient {
@@ -49,76 +50,149 @@ interface NotificacionesServiceClient {
   SendActualizacion(data: any): Observable<any>;
 }
 
+interface PeriodosServiceClient {
+  GetMateriaById(data: { materia_id: string }): Observable<any>;
+}
+
 @Controller('calificaciones')
-@UseGuards(AuthGuard('jwt'))
 export class AppController implements OnModuleInit {
   private authService!: AuthServiceClient;
   private alumnosService!: AlumnosServiceClient;
   private notificacionesService!: NotificacionesServiceClient;
+  private periodosService!: PeriodosServiceClient;
 
   constructor(
     @InjectRepository(Materia) private materiaRepository: Repository<Materia>,
     @InjectRepository(Grupo) private grupoRepository: Repository<Grupo>,
-    @InjectRepository(Calificacion) private calificacionRepository: Repository<Calificacion>,
-    @Inject('AUTH_PACKAGE') private authClient: ClientGrpc,
-    @Inject('ALUMNOS_PACKAGE') private alumnosClient: ClientGrpc,
-    @Inject('NOTIFICACIONES_PACKAGE') private notificacionesClient: ClientGrpc,
+    @InjectRepository(Calificacion)
+    private calificacionRepository: Repository<Calificacion>,
+    @Inject('AUTH_SERVICE') private authClient: ClientGrpc,
+    @Inject('ALUMNOS_SERVICE') private alumnosClient: ClientGrpc,
+    @Inject('NOTIFICACIONES_SERVICE') private notificacionesClient: ClientGrpc,
+    @Inject('PERIODOS_SERVICE') private periodosClient: ClientGrpc,
   ) {}
 
   onModuleInit() {
     this.authService = this.authClient.getService<AuthServiceClient>('AuthService');
     this.alumnosService = this.alumnosClient.getService<AlumnosServiceClient>('AlumnosService');
     this.notificacionesService = this.notificacionesClient.getService<NotificacionesServiceClient>('NotificacionesService');
+    this.periodosService = this.periodosClient.getService<PeriodosServiceClient>('PeriodosService');
   }
 
+  /**
+   * ✅ GET /
+   * Health check (público)
+   */
   @Get()
   getHello() {
     return { message: 'ms-calificaciones activo en puerto 3003' };
   }
 
+  /**
+   * ✅ GET /materias
+   * Listar todas las materias (público)
+   */
   @Get('materias')
   async obtenerMaterias() {
     return await this.materiaRepository.find();
   }
 
+  /**
+   * ✅ POST /materia
+   * Crear nueva materia (admin, docente)
+   */
   @Post('materia')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente')
   async crearMateria(@Body() dto: CreateMateriaDto) {
     const existe = await this.materiaRepository.findOne({ where: { clave: dto.clave } });
     if (existe) throw new BadRequestException(`Ya existe la clave ${dto.clave}`);
     return await this.materiaRepository.save(this.materiaRepository.create(dto));
   }
 
+  /**
+   * ✅ GET /grupos
+   * Listar grupos (público)
+   */
   @Get('grupos')
   async obtenerGrupos() {
     return await this.grupoRepository.find({ relations: ['materia'] });
   }
 
+  /**
+   * ✅ POST /grupo
+   * Crear nuevo grupo (admin, docente)
+   */
   @Post('grupo')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente')
   async crearGrupo(@Body() dto: CreateGrupoDto, @Req() req: AuthenticatedRequest) {
-    if (req.user.role !== 'admin' && req.user.role !== 'docente') throw new UnauthorizedException();
     const materia = await this.materiaRepository.findOne({ where: { clave: dto.materia_clave } });
     if (!materia) throw new NotFoundException('Materia no encontrada');
     return await this.grupoRepository.save(this.grupoRepository.create({
-      nrc: dto.nrc, materia, docente_id: req.user.userId, seccion: dto.seccion, periodo: dto.periodo,
+      nrc: dto.nrc, materia, docente_id: req.user.user_id, seccion: dto.seccion, periodo: dto.periodo,
     }));
   }
 
+  /**
+   * ✅ POST /calificar
+   * Registrar calificación (admin, docente)
+   */
   @Post('calificar')
-  async calificarAlumno(@Body() dto: CreateCalificacionDto, @Req() req: AuthenticatedRequest) {
-    if (req.user.role !== 'admin' && req.user.role !== 'docente') throw new UnauthorizedException();
-    const grupo = await this.grupoRepository.findOne({ where: { nrc: dto.nrc_grupo }, relations: ['materia'] });
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente')
+  async calificarAlumno(
+    @Body() dto: CreateCalificacionDto,
+  ) {
+    // 🚀 LLAMADA gRPC AL MS-2 (PERIODOS) PARA VALIDAR LA MATERIA
+    try {
+      const materiaInfo = await firstValueFrom(
+        this.periodosService.GetMateriaById({ materia_id: dto.nrc_grupo }).pipe(timeout(5000))
+      );
+
+      if (!materiaInfo || !materiaInfo.nombre) {
+        throw new NotFoundException(
+          'La materia con ese NRC no existe en el periodo activo',
+        );
+      }
+
+      console.log(
+        `✅ Validado en MS-2 (Periodos): ${materiaInfo.nombre} (${materiaInfo.creditos} créditos)`,
+      );
+    } catch (error) {
+      console.error('❌ Error validando materia en MS-2:', (error as Error).message);
+      throw new NotFoundException(
+        'Error validando la materia con el servicio de Periodos',
+      );
+    }
+
+    // Si la validación pasó, proceder con la calificación
+    const grupo = await this.grupoRepository.findOne({
+      where: { nrc: dto.nrc_grupo },
+      relations: ['materia'],
+    });
     if (!grupo) throw new NotFoundException('El grupo no existe.');
 
-    const estatus = dto.calificacion_ordinaria >= 6 ? 'Aprobado' : 'Reprobado';
-    return await this.calificacionRepository.save(this.calificacionRepository.create({
-      grupo, matricula_alumno: dto.matricula_alumno, calificacion_ordinaria: dto.calificacion_ordinaria, estatus,
-    }));
+    const estatus =
+      dto.calificacion_ordinaria >= 6 ? 'Aprobado' : 'Reprobado';
+    return await this.calificacionRepository.save(
+      this.calificacionRepository.create({
+        grupo,
+        matricula_alumno: dto.matricula_alumno,
+        calificacion_ordinaria: dto.calificacion_ordinaria,
+        estatus,
+      }),
+    );
   }
 
+  /**
+   * ✅ PUT /:nrc/:matricula
+   * Actualizar calificación (admin, docente)
+   */
   @Put(':nrc/:matricula')
-  async actualizarCalificacion(@Param('nrc') nrc: string, @Param('matricula') matricula: string, @Body() dto: UpdateCalificacionDto, @Req() req: AuthenticatedRequest) {
-    if (req.user.role !== 'admin' && req.user.role !== 'docente') throw new UnauthorizedException();
-    
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente')
+  async actualizarCalificacion(@Param('nrc') nrc: string, @Param('matricula') matricula: string, @Body() dto: UpdateCalificacionDto) {
     const calificacion = await this.calificacionRepository.findOne({ 
       where: { matricula_alumno: matricula, nrc_grupo: nrc }, 
       relations: ['grupo', 'grupo.materia'] 
@@ -136,48 +210,14 @@ export class AppController implements OnModuleInit {
     return resultado;
   }
 
-  private async enviarNotificacionActualizacion(matricula: string, calificacion: any, nuevaNota: number, nrc: string) {
-    try {
-      // 1. TU CORREO SIEMPRE COMO RESPALDO POR SI FALLAN LOS OTROS MICROSERVICIOS
-      let email = 'angel.sarmientot@alumno.buap.mx'; 
-      
-      // 🛠️ AQUÍ ESTÁ EL CAMBIO: Concatenamos Clave + Nombre de la materia
-      const nombreMateria = calificacion.grupo?.materia 
-        ? `${calificacion.grupo.materia.clave} - ${calificacion.grupo.materia.nombre}` 
-        : nrc;
-
-      try {
-        const alumnoData = await firstValueFrom(this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000)));
-        const userData = await firstValueFrom(this.authService.GetUserById({ user_id: alumnoData.user_id }).pipe(timeout(3000)));
-        if (userData?.email) email = userData.email;
-      } catch (err: any) {
-        console.warn(`⚠️ Aviso: Se usará el correo por defecto. Error al buscar alumno: ${err.message}`);
-      }
-
-      console.log(`🚀 Preparando paquete gRPC Actualización -> Matrícula: ${matricula}, Materia: ${nombreMateria}`);
-
-      // 2. FORZAMOS EL ENVÍO Y ESPERAMOS RESPUESTA
-      const response = await firstValueFrom(this.notificacionesService.SendActualizacion({
-        email_destino: email,
-        emailDestino: email,
-        usuario_id: matricula,
-        usuarioId: matricula,
-        materia_id: nombreMateria,
-        materiaId: nombreMateria,
-        nueva_nota: nuevaNota,
-        nuevaNota: nuevaNota
-      } as any));
-
-      console.log(`✅ gRPC Actualización disparada correctamente:`, response);
-    } catch (err: any) {
-      console.error('❌ ERROR GRAVE al enviar gRPC Actualización:', err.message);
-    }
-  }
-
+  /**
+   * ✅ DELETE /:nrc/:matricula
+   * Eliminar calificación / dar de baja alumno (admin, docente)
+   */
   @Delete(':nrc/:matricula')
-  async eliminarCalificacion(@Param('nrc') nrc: string, @Param('matricula') matricula: string, @Req() req: AuthenticatedRequest) {
-    if (req.user.role !== 'admin' && req.user.role !== 'docente') throw new UnauthorizedException();
-    
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente')
+  async eliminarCalificacion(@Param('nrc') nrc: string, @Param('matricula') matricula: string) {
     const calificacion = await this.calificacionRepository.findOne({ 
       where: { matricula_alumno: matricula, nrc_grupo: nrc }, 
       relations: ['grupo', 'grupo.materia'] 
@@ -185,7 +225,6 @@ export class AppController implements OnModuleInit {
 
     if (!calificacion) throw new NotFoundException('No existe el registro');
     
-    // 🛠️ AQUÍ ESTÁ EL CAMBIO: Concatenamos Clave + Nombre de la materia
     const matNombre = calificacion.grupo?.materia 
       ? `${calificacion.grupo.materia.clave} - ${calificacion.grupo.materia.nombre}` 
       : nrc;
@@ -198,40 +237,49 @@ export class AppController implements OnModuleInit {
     return { message: 'Alumno dado de baja exitosamente', matricula_alumno: matricula };
   }
 
-  private async enviarNotificacionBaja(matricula: string, nombreMateria: string) {
+  /**
+   * ✅ GET /kardex/mi-kardex
+   * Ver mi kardex (solo alumno autenticado)
+   */
+  @Get('kardex/mi-kardex')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('alumno', 'docente', 'admin')
+  async verMiKardex(@Req() req: AuthenticatedRequest) {
+    const alumno = await firstValueFrom(this.alumnosService.GetAlumnoByUserId({ user_id: req.user.user_id }));
+    return await this.calificacionRepository.find({ where: { matricula_alumno: alumno.matricula }, relations: ['grupo', 'grupo.materia'] });
+  }
+
+  // ==========================================
+  // ✉️ MÉTODOS PRIVADOS PARA NOTIFICACIONES
+  // ==========================================
+
+  private async enviarNotificacionActualizacion(matricula: string, calificacion: Calificacion, nuevaNota: number, nrc: string) {
     try {
-      // 1. TU CORREO SIEMPRE COMO RESPALDO
-      let email = 'angel.sarmientot@alumno.buap.mx';
-
-      try {
-        const alumnoData = await firstValueFrom(this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000)));
-        const userData = await firstValueFrom(this.authService.GetUserById({ user_id: alumnoData.user_id }).pipe(timeout(3000)));
-        if (userData?.email) email = userData.email;
-      } catch (err: any) {
-        console.warn(`⚠️ Aviso: Se usará el correo por defecto. Error al buscar alumno: ${err.message}`);
-      }
-
-      console.log(`🚀 Preparando paquete gRPC Baja -> Matrícula: ${matricula}, Materia: ${nombreMateria}`);
-
-      // 2. FORZAMOS EL ENVÍO Y ESPERAMOS RESPUESTA
-      const response = await firstValueFrom(this.notificacionesService.SendBajaNotif({
-        email_destino: email,
-        emailDestino: email,
-        usuario_id: matricula,
-        usuarioId: matricula,
-        materia_id: nombreMateria,
-        materiaId: nombreMateria
-      } as any));
-
-      console.log(`✅ gRPC Baja disparada correctamente:`, response);
-    } catch (err: any) {
-      console.error('❌ ERROR GRAVE al enviar gRPC Baja:', err.message);
+      await firstValueFrom(
+        this.notificacionesService.SendActualizacion({
+          matricula: matricula,
+          materia: nrc, 
+          calificacion_anterior: calificacion.calificacion_ordinaria,
+          calificacion_nueva: nuevaNota
+        }).pipe(timeout(3000)) // Timeout de seguridad
+      );
+      console.log(`[gRPC] Notificación de actualización enviada para ${matricula}`);
+    } catch (error) {
+      console.error('❌ Error enviando notificación de actualización (gRPC):', (error as Error).message);
     }
   }
 
-  @Get('kardex/mi-kardex')
-  async verMiKardex(@Req() req: AuthenticatedRequest) {
-    const alumno = await firstValueFrom(this.alumnosService.GetAlumnoByUserId({ user_id: req.user.userId }));
-    return await this.calificacionRepository.find({ where: { matricula_alumno: alumno.matricula }, relations: ['grupo', 'grupo.materia'] });
+  private async enviarNotificacionBaja(matricula: string, matNombre: string) {
+    try {
+      await firstValueFrom(
+        this.notificacionesService.SendBajaNotif({
+          matricula: matricula,
+          materia: matNombre
+        }).pipe(timeout(3000)) // Timeout de seguridad
+      );
+      console.log(`[gRPC] Notificación de baja enviada para ${matricula}`);
+    } catch (error) {
+      console.error('❌ Error enviando notificación de baja (gRPC):', (error as Error).message);
+    }
   }
-}
+} // 👈 AQUÍ ESTÁ LA LLAVE QUE FALTABA

@@ -1,5 +1,14 @@
 $kind: http-request
 name: test bienvenuda
-url: ""
-method: GET
+url: http://localhost:3004/test/bienvenida
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"usuario_id\": \"202253882\",\r
+
+    \  \"email_destino\": \"jonathan.vergaran@alumno.buap.mx\"\r
+
+    }"
 order: 4202433071658652

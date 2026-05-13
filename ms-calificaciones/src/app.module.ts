@@ -36,7 +36,7 @@ const getProtoPath = (protoFile: string) => {
     // 📞 REGISTRO DE TODOS LOS CLIENTES gRPC
     ClientsModule.register([
       {
-        name: 'AUTH_PACKAGE',
+        name: 'AUTH_SERVICE',
         transport: Transport.GRPC,
         options: {
           package: 'auth',
@@ -45,7 +45,7 @@ const getProtoPath = (protoFile: string) => {
         },
       },
       {
-        name: 'ALUMNOS_PACKAGE',
+        name: 'ALUMNOS_SERVICE',
         transport: Transport.GRPC,
         options: {
           package: 'alumnos',
@@ -55,12 +55,22 @@ const getProtoPath = (protoFile: string) => {
       },
       // 🚀 CONEXIÓN HACIA NOTIFICACIONES
       {
-        name: 'NOTIFICACIONES_PACKAGE',
+        name: 'NOTIFICACIONES_SERVICE',
         transport: Transport.GRPC,
         options: {
           package: 'notificaciones',
           protoPath: getProtoPath('notificaciones.proto'),
           url: `${process.env.NOTIF_GRPC_HOST || 'localhost'}:${process.env.NOTIF_GRPC_PORT || '5003'}`,
+        },
+      },
+      // 🚀 CONEXIÓN HACIA PERIODOS
+      {
+        name: 'PERIODOS_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'periodos',
+          protoPath: getProtoPath('periodos.proto'),
+          url: `${process.env.PERIODOS_GRPC_HOST || 'localhost'}:${process.env.PERIODOS_GRPC_PORT || '5001'}`,
         },
       },
     ]),

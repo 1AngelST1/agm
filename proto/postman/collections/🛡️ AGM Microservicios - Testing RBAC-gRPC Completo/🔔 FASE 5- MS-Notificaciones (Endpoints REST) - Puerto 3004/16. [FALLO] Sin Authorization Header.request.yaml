@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  ❌ Sin token, acceso denegado
+
+  **Esperado:** 401 Unauthorized (JwtAuthGuard rechaza)
+url: http://localhost:3004/notificaciones/bienvenida
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "usuario_id": "202253882",
+      "email_destino": "angel.sarmientot@alumno.buap.mx"
+    }
+order: 4000

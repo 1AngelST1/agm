@@ -1,0 +1,5 @@
+$kind: http-request
+name: New Request
+url: http://localhost:3003/calificaciones/calificar
+method: GET
+order: 1754581340675856

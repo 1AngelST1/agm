@@ -1,0 +1,20 @@
+$kind: http-request
+description: |-
+  ✅ Envía email de bienvenida (admin, docente)
+
+  **Esperado:** 200 OK + { success: true, message: 'Bienvenida enviada' }
+
+  **Verificación:** Revisa el correo angel.sarmientot@alumno.buap.mx
+url: http://localhost:3004/notificaciones/bienvenida
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{TOKEN_ADMIN}}
+body:
+  type: text
+  content: |-
+    {
+      "usuario_id": "202253882",
+      "email_destino": "angel.sarmientot@alumno.buap.mx"
+    }
+order: 1000

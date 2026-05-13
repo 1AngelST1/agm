@@ -1,5 +1,18 @@
 $kind: http-request
 name: actualizacion de calificacion test
-url: ""
-method: GET
+url: http://localhost:3004/test/actualizacion
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"usuario_id\": \"202253882\",\r
+
+    \  \"materia_id\": \"ITIS 260 - Servicios Web\",\r
+
+    \  \"nueva_nota\": 9.5,\r
+
+    \  \"email_destino\": \"jonathan.vergaran@alumno.buap.mx\"\r
+
+    }"
 order: 3614772432915213

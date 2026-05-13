@@ -15,15 +15,15 @@ async function bootstrap() {
       package: 'alumnos', // Coincide con tu alumnos.proto
       // 👇 2. AQUÍ CALCULAMOS LA RUTA DINÁMICAMENTE
       protoPath: join(process.cwd(), '../proto/alumnos.proto'),
-      url: 'localhost:5001', // ms-auth usa 5000, ms-alumnos usará 5001
+      url: 'localhost:5002', // ms-auth usa 5000, ms-alumnos usará 5002
     },
   });
 
   // 3. Arrancamos ambos motores
-  await app.startAllMicroservices(); // Prende el gRPC (5001)
+  await app.startAllMicroservices(); // Prende el gRPC (5002)
   await app.listen(3002); // Prende el REST (3002)
   console.log(' ms-alumnos REST escuchando en puerto 3002');
-  console.log(' ms-alumnos gRPC escuchando en puerto 5001');
+  console.log(' ms-alumnos gRPC escuchando en puerto 5002');
 }
 
 bootstrap().catch((err) => {

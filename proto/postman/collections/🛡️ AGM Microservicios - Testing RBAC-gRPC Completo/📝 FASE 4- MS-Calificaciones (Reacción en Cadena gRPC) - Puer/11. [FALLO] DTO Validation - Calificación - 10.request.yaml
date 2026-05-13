@@ -1,0 +1,20 @@
+$kind: http-request
+name: 11. [FALLO] DTO Validation - Calificación > 10
+description: |-
+  ❌ class-validator rechaza calificación > 10
+
+  **Esperado:** 400 Bad Request (Validation error)
+url: http://localhost:3003/calificaciones/calificar
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{TOKEN_ADMIN}}
+body:
+  type: text
+  content: |-
+    {
+      "nrc_grupo": "50130",
+      "matricula_alumno": "202253882",
+      "calificacion_ordinaria": 15
+    }
+order: 2000

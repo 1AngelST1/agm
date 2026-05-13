@@ -1,0 +1,31 @@
+$kind: http-request
+name: 5. [ÉXITO] Crear Periodo (Admin)
+description: |-
+  ✅ Admin puede crear periodos
+
+  **Esperado:** 201 Created
+
+  **Acción:** Copia el `id` del periodo devuelto y pégalo en {{PERIODO_ID}}
+url: http://localhost:3001/periodos
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+    disabled: true
+  - key: Authorization
+    value: Bearer {{TOKEN_ADMIN}}
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Otoño 2026",
+      "fecha_inicio": "2026-08-10",
+      "fecha_fin": "2026-12-15",
+      "plan_estudios": "ITI-2020"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZTkzYzc5ZDEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Nzg0NzM2NjMsImV4cCI6MTc3ODQ4MDg2M30.0gSy2FiEiZo2zOHNzg6GTrto2hv9xyfZXEODrEYhuDE
+order: 3000

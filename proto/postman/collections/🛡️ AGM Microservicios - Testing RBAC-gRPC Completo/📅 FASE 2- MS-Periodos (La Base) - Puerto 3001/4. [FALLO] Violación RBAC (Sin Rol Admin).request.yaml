@@ -1,0 +1,22 @@
+$kind: http-request
+description: |-
+  ❌ Tienes token válido, pero no eres ADMIN
+
+  **Esperado:** 403 Forbidden (RolesGuard rechaza)
+
+  **Nota:** Necesitas un token con role='docente' (si lo tienes, úsalo)
+url: http://localhost:3001/periodos
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{TOKEN_DOCENTE}}
+body:
+  type: text
+  content: |-
+    {
+      "nombre": "Otoño 2026",
+      "fecha_inicio": "2026-08-10",
+      "fecha_fin": "2026-12-15",
+      "plan_estudios": "ITI-2020"
+    }
+order: 2000

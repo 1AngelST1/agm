@@ -1,0 +1,17 @@
+$kind: http-request
+name: 9. [ÉXITO] Ver mi perfil (Autenticado)
+description: |-
+  ✅ Obtiene datos del usuario autenticado
+
+  **Esperado:** 200 OK + perfil del usuario
+url: http://localhost:3002/alumnos/me
+method: GET
+headers:
+  - key: Authorization
+    value: Bearer {{TOKEN_ADMIN}}
+    disabled: true
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZDRjZWJjMzEiLCJlbWFpbCI6ImFuZ2VsLnNhcm1pZW50b3RAYWx1bW5vLmJ1YXAubXgiLCJyb2xlIjoiYWx1bW5vIiwiaWF0IjoxNzc4NDc3ODAxLCJleHAiOjE3Nzg0ODUwMDF9.DXu3aCErEyp_k64Bqp0lOyl3mZJv6qPIFAAOHZXIB2w
+order: 3000

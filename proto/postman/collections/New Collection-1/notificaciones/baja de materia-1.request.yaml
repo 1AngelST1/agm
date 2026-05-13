@@ -2,8 +2,11 @@ $kind: http-request
 name: baja de materia
 url: http://localhost:3003/calificaciones/50130/202253882
 method: DELETE
+body:
+  type: json
+  content: ""
 auth:
   type: bearer
   credentials:
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfYWJmYTQzMTYiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3ODA1MTkyMSwiZXhwIjoxNzc4MDU5MTIxfQ.OBQHQ-Hj7PNVzn_KFkHFEQJvc_4NjvCXSmhos0-2U_8
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfYWJmYTQzMTYiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3ODA5MDU1NywiZXhwIjoxNzc4MDk3NzU3fQ.aNJkYojNcOT2ypjkb3TADtmPA3dGVYti0EhKo1z_gi8
 order: 3544676167371456

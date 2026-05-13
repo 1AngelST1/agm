@@ -20,9 +20,9 @@ async function bootstrap() {
 
   // 4. ARRANCAR AMBOS
   await app.startAllMicroservices();
-  await app.listen(3001);
+  await app.listen(3000);
 
-  console.log('ms-auth REST escuchando en puerto 3001');
+  console.log('ms-auth REST escuchando en puerto 3000');
   console.log('ms-auth gRPC escuchando en puerto 5000');
 }
 

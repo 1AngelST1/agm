@@ -1,0 +1,20 @@
+$kind: http-request
+name: 8. [FALLO] Duplicidad - Alumno ya existe
+description: |-
+  ❌ Intenta crear alumno duplicado
+
+  **Esperado:** 400 Bad Request (Base de datos rechaza PK duplicada)
+url: http://localhost:3002/alumnos/crear
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{TOKEN_ADMIN}}
+body:
+  type: json
+  content: |-
+    {
+      "matricula": "202253882",
+      "nombre": "Angel Sarmiento",
+      "correo": "angel.sarmientot@alumno.buap.mx"
+    }
+order: 2000

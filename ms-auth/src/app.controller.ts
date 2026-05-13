@@ -242,4 +242,64 @@ export class AppController {
       role: user.role,
     };
   }
+
+  /**
+   * 🔐 MÉTODO gRPC: ValidateToken
+   * Otros microservicios lo llaman para validar un JWT y obtener los claims del usuario.
+   * Devuelve el user_id, email y role si el token es válido.
+   * Si no es válido, lanza una excepción.
+   */
+  @GrpcMethod('AuthService', 'ValidateToken')
+  async validateToken(data: {
+    token?: string;
+  }): Promise<{ userId: string; email: string; role: string }> {
+    const token = data.token || '';
+
+    if (!token) {
+      throw new UnauthorizedException('Token no proporcionado');
+    }
+
+    // Verifica el token usando TokenService
+    const payload = this.tokenService.verifyToken(token);
+    
+    const response = {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    };
+    
+    console.log('✅ ValidateToken returning:', response);
+    return response;
+  }
+
+  /**
+   * 🔐 MÉTODO gRPC: CheckRole
+   * Verifica si un usuario tiene un rol específico.
+   * Devuelve true/false indicando si el usuario tiene ese rol.
+   */
+  @GrpcMethod('AuthService', 'CheckRole')
+  async checkRole(data: {
+    user_id?: string;
+    userId?: string;
+    role?: string;
+  }): Promise<{ isAuthorized: boolean }> {
+    const idBuscado = data.userId || data.user_id;
+    const roleRequerido = data.role || '';
+
+    if (!idBuscado || !roleRequerido) {
+      throw new BadRequestException('user_id y role son requeridos');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: idBuscado },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    return {
+      isAuthorized: user.role === roleRequerido,
+    };
+  }
 }

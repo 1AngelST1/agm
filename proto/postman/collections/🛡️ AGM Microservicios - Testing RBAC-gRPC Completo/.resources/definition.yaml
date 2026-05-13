@@ -1,0 +1,6 @@
+$kind: collection
+description: Colección oficial para validar los 5 microservicios (Auth, Periodos, Alumnos, Calificaciones, Notificaciones)
+variables:
+  TOKEN_ADMIN: ""
+  TOKEN_DOCENTE: ""
+  PERIODO_ID: ""

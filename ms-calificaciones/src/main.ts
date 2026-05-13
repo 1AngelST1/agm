@@ -26,15 +26,15 @@ async function bootstrap() {
     options: {
       package: 'calificaciones', // Coincide con tu calificaciones.proto (si lo necesitas)
       protoPath: getProtoPath(),
-      url: 'localhost:5002', // ms-auth usa 5000, ms-alumnos usa 5001, ms-calificaciones usa 5002
+      url: 'localhost:5003', // ms-auth usa 5000, ms-alumnos usa 5001, ms-calificaciones usa 5003
     },
   });
 
   // 3. Arrancamos ambos motores
-  await app.startAllMicroservices(); // Prende el gRPC (5002)
+  await app.startAllMicroservices(); // Prende el gRPC (5003)
   await app.listen(3003); // Prende el REST (3003)
   console.log(' ms-calificaciones REST escuchando en puerto 3003');
-  console.log(' ms-calificaciones gRPC escuchando en puerto 5002');
+  console.log(' ms-calificaciones gRPC escuchando en puerto 5003');
 }
 
 bootstrap().catch((err) => {

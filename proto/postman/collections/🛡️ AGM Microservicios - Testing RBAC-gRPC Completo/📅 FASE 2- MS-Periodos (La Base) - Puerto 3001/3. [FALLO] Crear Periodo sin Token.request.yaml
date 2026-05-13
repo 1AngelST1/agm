@@ -1,0 +1,20 @@
+$kind: http-request
+name: 3. [FALLO] Crear Periodo sin Token
+description: |-
+  ❌ Sin token, la puerta está cerrada
+
+  **Esperado:** 401 Unauthorized (JwtAuthGuard rechaza)
+url: http://localhost:3001/periodos
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Otoño 2026",
+      "fecha_inicio": "2026-08-10",
+      "fecha_fin": "2026-12-15",
+      "plan_estudios": "ITI-2020"
+    }
+order: 1000

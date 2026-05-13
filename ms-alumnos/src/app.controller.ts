@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Inject,
   Param,
@@ -17,7 +18,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Alumno } from './alumno.entity';
 import { Observable, lastValueFrom } from 'rxjs';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
 
 // 1. Definimos exactamente qué nos devuelve ms-auth
 interface AuthResponse {
@@ -34,7 +37,7 @@ interface AuthService {
 
 // 3. Definimos el tipo del usuario desde el token JWT
 interface RequestUser {
-  userId: string;
+  user_id: string;
   email: string;
   role: string;
 }
@@ -52,14 +55,18 @@ export class AppController implements OnModuleInit {
     this.authService = this.client.getService<AuthService>('AuthService');
   }
 
-  // --- OBTENER MIS DATOS (Alumno actual autenticado) ---
-  @UseGuards(JwtAuthGuard)
+  /**
+   * ✅ GET /me
+   * Obtener mis datos personales
+   * Cualquier usuario autenticado (alumno, docente, admin)
+   */
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   async obtenerMisDatos(@Request() req: { user: RequestUser }) {
     const usuario = req.user;
     // 1. Buscamos el alumno en la base de datos propia por USER_ID
     const alumnoLocal = await this.alumnoRepository.findOne({
-      where: { user_id: usuario.userId },
+      where: { user_id: usuario.user_id },
     });
 
     if (!alumnoLocal) {
@@ -88,9 +95,14 @@ export class AppController implements OnModuleInit {
     };
   }
 
-  // --- EL MEGA-BUSCADOR DE ALUMNOS ---
-  @UseGuards(JwtAuthGuard)
+  /**
+   * ✅ GET /:matricula
+   * Obtener datos de un alumno por matrícula
+   * Alumno: solo su propia matrícula
+   * Docente/Admin: cualquier matrícula
+   */
   @Get(':matricula')
+  @UseGuards(JwtAuthGuard)
   async getAlumnoCompleto(
     @Param('matricula') matricula: string,
     @Request() req: { user: RequestUser },
@@ -106,11 +118,10 @@ export class AppController implements OnModuleInit {
       );
     }
 
-    //  NUEVA REGLA DE SEGURIDAD (RBAC) - A prueba de correos con nombres
+    // REGLA DE SEGURIDAD (RBAC): Alumno solo puede ver su propia matrícula
     const usuario = req.user;
     if (usuario.role === 'alumno') {
-      // Comparamos que el 'user_id' del expediente sea igual al ID del token ('userId' lo mapea tu JwtStrategy)
-      if (alumnoLocal.user_id !== usuario.userId) {
+      if (alumnoLocal.user_id !== usuario.user_id) {
         throw new UnauthorizedException(
           '¡Intruso! Solo puedes consultar tu propia matrícula.',
         );
@@ -137,7 +148,15 @@ export class AppController implements OnModuleInit {
     };
   }
 
+  /**
+   * ✅ POST /crear
+   * Crear un nuevo alumno
+   * Solo Admin puede crear alumnos
+   * Body debe incluir: user_id (del usuario recién creado), matricula, carrera
+   */
   @Post('crear')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente')
   async crearAlumno(
     @Body()
     body: {
@@ -146,8 +165,44 @@ export class AppController implements OnModuleInit {
       carrera: string;
     },
   ) {
-    const nuevoAlumno = this.alumnoRepository.create(body);
-    return await this.alumnoRepository.save(nuevoAlumno);
+    console.log('DEBUG: Creating alumno with body:', body);
+    
+    const nuevoAlumno = this.alumnoRepository.create({
+      user_id: body.user_id,
+      matricula: body.matricula,
+      carrera: body.carrera,
+    });
+    
+    const resultado = await this.alumnoRepository.save(nuevoAlumno);
+    console.log('✅ Alumno created:', resultado);
+    return resultado;
+  }
+
+  /**
+   * ✅ DELETE /baja/:matricula
+   * Dar de baja a un alumno (solo el alumno de sí mismo, o admin)
+   */
+  @Delete('baja/:matricula')
+  @UseGuards(JwtAuthGuard)
+  async darDeBajaAlumno(
+    @Param('matricula') matricula: string,
+    @Request() req: { user: RequestUser },
+  ) {
+    const alumnoLocal = await this.alumnoRepository.findOne({
+      where: { matricula },
+    });
+
+    if (!alumnoLocal) {
+      throw new NotFoundException('Alumno no encontrado');
+    }
+
+    // Alumno solo puede darse de baja a sí mismo
+    if (req.user.role === 'alumno' && alumnoLocal.user_id !== req.user.user_id) {
+      throw new UnauthorizedException('Solo puedes darte de baja a ti mismo');
+    }
+
+    await this.alumnoRepository.delete(alumnoLocal.id);
+    return { success: true, message: 'Alumno dado de baja' };
   }
 
   // 📡 MÉTODO gRPC: Validar alumno por matrícula (usado por ms-calificaciones)

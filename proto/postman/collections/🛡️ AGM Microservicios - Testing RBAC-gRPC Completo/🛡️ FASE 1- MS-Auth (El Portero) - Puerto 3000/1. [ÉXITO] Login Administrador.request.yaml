@@ -1,0 +1,20 @@
+$kind: http-request
+name: 1. [ÉXITO] Login Administrador
+description: |-
+  ✅ Obtiene TOKEN_ADMIN para usar en las demás pruebas
+
+  **Esperado:** 200 OK + access_token
+
+  **Acción:** Copia el `access_token` y pégalo en la variable {{TOKEN_ADMIN}} en Postman (Environment)
+url: http://localhost:3000/auth/login
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "admin@admin.buap.mx",
+      "password": "passwordSeguro123"
+    }
+order: 1000

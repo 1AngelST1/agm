@@ -8,6 +8,8 @@ service AuthService {
   rpc ValidateToken (ValidateTokenRequest) returns (UserClaims) {}
   // GetUserById retrieves user profile information by ID
   rpc GetUserById (UserByIdRequest) returns (UserProfile) {}
+  // CheckRole checks if a user has a specific role
+  rpc CheckRole (CheckRoleRequest) returns (CheckRoleResponse) {}
 }
 
 message ValidateTokenRequest {
@@ -29,4 +31,13 @@ message UserProfile {
   string name = 2;
   string email = 3;
   string role = 4;
+}
+
+message CheckRoleRequest {
+  string user_id = 1;
+  string role = 2;
+}
+
+message CheckRoleResponse {
+  bool is_authorized = 1;
 }
