@@ -1,0 +1,18 @@
+$kind: http-request
+name: incribir alumno
+url: http://localhost:3002/alumnos/inscribir
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"matricula_alumno\": \"202253882\",\r
+
+    \  \"nrc_materia\": \"50130\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZjE2ZWFmNWMiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzkwMDAwMTYsImV4cCI6MTc3OTAwNzIxNn0.dqzVNktV76FL0x9JJkcK99a47e2H-X9r4mcL2DHK-Jo
+order: 1778019528315

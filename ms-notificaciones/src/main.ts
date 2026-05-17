@@ -8,20 +8,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 
-  // 2. Instancia para gRPC (Puerto 5004)
+  // 2. Instancia para gRPC (Puerto 5014)
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       package: 'notificaciones',
-      protoPath: join(process.cwd(), '../proto/notificaciones.proto'),
-      url: '0.0.0.0:5004',
+      protoPath: join(__dirname, '../../proto/notificaciones.proto'),
+      url: '0.0.0.0:5014', // 🔥 Sincronizado en 5014
     },
   });
 
   await app.startAllMicroservices();
   await app.listen(3004);
 
-  console.log('ms-notificaciones REST escuchando en puerto 3004');
-  console.log('ms-notificaciones gRPC escuchando en puerto 5004');
+  console.log('🚀 ms-notificaciones REST escuchando en puerto 3004');
+  console.log('📡 ms-notificaciones gRPC escuchando en puerto 5014');
 }
 bootstrap().catch((err) => console.error(err));

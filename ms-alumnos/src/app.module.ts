@@ -1,47 +1,64 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { PassportModule } from '@nestjs/passport';
+import { join } from 'path';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Alumno } from './alumno.entity';
-import { JwtStrategy } from './auth/jwt.strategy';
-import { join } from 'path'; // 👈 1. IMPORTAMOS ESTO PARA MANEJAR RUTAS
+import { Inscripcion } from './inscripcion.entity';
 
 @Module({
   imports: [
-    // Configurar Passport para JWT
-    PassportModule,
-
-    // Conexión a BD propia para ms-alumnos
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
+      port: parseInt(process.env.DB_PORT || '5432', 10),
       username: process.env.DB_USERNAME || 'admin',
       password: process.env.DB_PASSWORD || 'adminpassword',
       database: process.env.DB_DATABASE || 'agm_alumnos_db',
-      entities: [Alumno],
+      autoLoadEntities: true,
       synchronize: true,
     }),
-    // ¡ESTA ES LA LÍNEA MÁGICA QUE FALTABA!
-    TypeOrmModule.forFeature([Alumno]),
-
-    // Cliente para comunicarse con ms-auth vía gRPC
+    TypeOrmModule.forFeature([Alumno, Inscripcion]),
     ClientsModule.register([
       {
         name: 'AUTH_SERVICE',
         transport: Transport.GRPC,
         options: {
           package: 'auth',
-          // 👈 2. AQUÍ CALCULAMOS LA RUTA DINÁMICAMENTE
-          protoPath: join(process.cwd(), '../proto/auth.proto'),
-          url: `${process.env.AUTH_GRPC_HOST || 'localhost'}:${process.env.AUTH_GRPC_PORT || '5000'}`,
+          protoPath: join(__dirname, '../../proto/auth.proto'),
+          url: process.env.AUTH_GRPC_HOST
+            ? `${process.env.AUTH_GRPC_HOST}:${process.env.AUTH_GRPC_PORT || 5000}`
+            : 'localhost:5000',
+        },
+      },
+      {
+        name: 'NOTIFICACIONES_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'notificaciones',
+          protoPath: join(__dirname, '../../proto/notificaciones.proto'),
+          url: 'localhost:5014',
+        },
+      },
+      {
+        name: 'PERIODOS_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'periodos',
+          protoPath: join(__dirname, '../../proto/periodos.proto'),
+          url: 'localhost:5001',
         },
       },
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService, JwtStrategy],
+  providers: [AppService],
 })
 export class AppModule {}

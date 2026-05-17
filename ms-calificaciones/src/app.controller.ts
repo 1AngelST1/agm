@@ -46,6 +46,7 @@ interface AuthServiceClient {
 }
 
 interface NotificacionesServiceClient {
+  SendBienvenida(data: any): Observable<any>;
   SendBajaNotif(data: any): Observable<any>;
   SendActualizacion(data: any): Observable<any>;
 }

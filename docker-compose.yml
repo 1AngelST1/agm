@@ -44,7 +44,7 @@ services:
       dockerfile: ./ms-auth/Dockerfile
     container_name: agm_ms_auth
     ports:
-      - "3001:3001"  # REST API
+      - "3000:3000"  # REST API
       - "5000:5000"  # gRPC
     environment:
       - DB_HOST=postgres-db
@@ -55,7 +55,7 @@ services:
       - JWT_SECRET=AGM-AST
       - JWT_EXPIRATION=3600
       - GRPC_PORT=5000
-      - REST_PORT=3001
+      - REST_PORT=3000
     depends_on:
       - postgres-db
     restart: unless-stopped
@@ -70,7 +70,7 @@ services:
     container_name: agm_ms_alumnos
     ports:
       - "3002:3002"  # REST API
-      - "5001:5001"  # gRPC
+      - "5002:5002"  # gRPC
     environment:
       - DB_HOST=postgres-db
       - DB_PORT=5432
@@ -79,7 +79,7 @@ services:
       - DB_DATABASE=agm_alumnos_db
       - AUTH_GRPC_HOST=ms-auth
       - AUTH_GRPC_PORT=5000
-      - GRPC_PORT=5001
+      - GRPC_PORT=5002
       - REST_PORT=3002
     depends_on:
       - postgres-db

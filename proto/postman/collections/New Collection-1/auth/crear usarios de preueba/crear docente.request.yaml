@@ -1,6 +1,6 @@
 $kind: http-request
 name: crear docente
-url: http://localhost:3001/auth/crear
+url: http://localhost:3000/auth/crear
 method: POST
 body:
   type: json

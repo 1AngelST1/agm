@@ -138,7 +138,7 @@ export class AppController {
         nombre: materia.nombre,
         creditos: 6.0, // Valor estándar según los PDFs académicos
       };
-    } catch (error) {
+    } catch {
       // Si no existe, retornamos un objeto vacío para que gRPC no crashee
       return {
         clave: '',

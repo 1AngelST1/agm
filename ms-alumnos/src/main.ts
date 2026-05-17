@@ -1,32 +1,26 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path'; // 👈 1. IMPORTAMOS JOIN PARA MANEJAR RUTAS
+import { join } from 'path';
 
 async function bootstrap() {
-  // 1. Iniciamos la app tradicional para el REST API
   const app = await NestFactory.create(AppModule);
-  app.enableCors(); // Habilitamos CORS para que el frontend pueda consumir esta API sin problemas
+  app.enableCors();
 
-  // 2. Le "conectamos" el servidor gRPC en un puerto diferente al de Auth
+  // Levantamos el servidor gRPC de Alumnos para que Calificaciones/Asistencias le puedan hablar
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      package: 'alumnos', // Coincide con tu alumnos.proto
-      // 👇 2. AQUÍ CALCULAMOS LA RUTA DINÁMICAMENTE
-      protoPath: join(process.cwd(), '../proto/alumnos.proto'),
-      url: 'localhost:5002', // ms-auth usa 5000, ms-alumnos usará 5002
+      package: 'alumnos',
+      protoPath: join(__dirname, '../../proto/alumnos.proto'),
+      url: '0.0.0.0:5002',
     },
   });
 
-  // 3. Arrancamos ambos motores
-  await app.startAllMicroservices(); // Prende el gRPC (5002)
-  await app.listen(3002); // Prende el REST (3002)
-  console.log(' ms-alumnos REST escuchando en puerto 3002');
-  console.log(' ms-alumnos gRPC escuchando en puerto 5002');
-}
+  await app.startAllMicroservices();
+  await app.listen(3002);
 
-bootstrap().catch((err) => {
-  console.error('Error al iniciar:', err);
-  process.exit(1);
-});
+  console.log('🚀 ms-alumnos REST escuchando en puerto 3002');
+  console.log('📡 ms-alumnos gRPC escuchando en puerto 5002');
+}
+bootstrap().catch((err) => console.error(err));

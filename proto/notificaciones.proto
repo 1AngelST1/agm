@@ -10,15 +10,25 @@ service NotificacionesService {
 
 message NotificacionRequest {
   string usuario_id = 1;
-  string materia_id = 2;
-  string email_destino = 3; 
+  string matricula = 2;
+  string nombre_alumno = 3;
+  string materia_id = 4;
+  string nombre_materia = 5;
+  string nombre_profesor = 6;
+  string email_destino = 7;
+  string materia = 8;
 }
 
 message ActualizacionRequest {
   string usuario_id = 1;
-  string materia_id = 2;
-  string email_destino = 3;
-  float nueva_nota = 4;
+  string matricula = 2;
+  string materia_id = 3;
+  string nombre_materia = 4;
+  string email_destino = 5;
+  float nueva_nota = 6;
+  float calificacion_anterior = 7;
+  float calificacion_nueva = 8;
+  string materia = 9;
 }
 
 message NotificacionResponse {

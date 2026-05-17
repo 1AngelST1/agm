@@ -1,0 +1,5 @@
+$kind: http-request
+name: New Request
+url: http://localhost:3005/asistencias/generar-qr
+method: POST
+order: 4503598922033634

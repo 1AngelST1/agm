@@ -1,8 +1,17 @@
-import { Controller, Post, Body, UseGuards, Inject, OnModuleInit } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prettier/prettier */
+
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Inject,
+  OnModuleInit,
+} from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import type { ClientGrpc } from '@nestjs/microservices';
 import * as nodemailer from 'nodemailer';
-import { Observable, of, firstValueFrom } from 'rxjs';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -11,15 +20,25 @@ interface AuthServiceClient {
   ValidateToken(data: { token: string }): any;
 }
 
-interface NotificacionPayload {
+interface NotificacionRequest {
   usuario_id?: string;
   usuarioId?: string;
+  matricula?: string;
+  nombre_alumno?: string;
+  nombreAlumno?: string;
   materia_id?: string;
   materiaId?: string;
+  nombre_materia?: string;
+  nombreMateria?: string;
+  nombre_profesor?: string;
+  nombreProfesor?: string;
   email_destino?: string;
   emailDestino?: string;
   nueva_nota?: number;
   nuevaNota?: number;
+  materia?: string;
+  calificacion_anterior?: number;
+  calificacion_nueva?: number;
 }
 
 @Controller('notificaciones')
@@ -38,13 +57,14 @@ export class AppController implements OnModuleInit {
   }
 
   onModuleInit() {
-    this.authService = this.authClient.getService<AuthServiceClient>('AuthService');
+    this.authService =
+      this.authClient.getService<AuthServiceClient>('AuthService');
   }
 
-  /**
-   * ✅ POST /notificaciones/bienvenida
-   * Enviar correo de bienvenida (admin, docente)
-   */
+  // ==========================================
+  // 🌐 ENDPOINTS REST
+  // ==========================================
+
   @Post('bienvenida')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -59,15 +79,16 @@ export class AppController implements OnModuleInit {
     return { success: true, message: 'Bienvenida enviada' };
   }
 
-  /**
-   * ✅ POST /notificaciones/baja
-   * Enviar notificación de baja (admin, docente)
-   */
   @Post('baja')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
   async enviarBajaREST(
-    @Body() body: { usuario_id: string; materia_id: string; email_destino: string },
+    @Body()
+    body: {
+      usuario_id: string;
+      materia_id: string;
+      email_destino: string;
+    },
   ) {
     await this.enviarEmail(
       body.email_destino,
@@ -77,10 +98,6 @@ export class AppController implements OnModuleInit {
     return { success: true, message: 'Baja notificada' };
   }
 
-  /**
-   * ✅ POST /notificaciones/cierre-materia
-   * Enviar notificación de cierre de materia (admin, docente)
-   */
   @Post('cierre-materia')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -95,60 +112,75 @@ export class AppController implements OnModuleInit {
     return { success: true, message: 'Cierre notificado' };
   }
 
-  @GrpcMethod('NotificacionesService', 'SendBienvenida')
-  grpcSendBienvenida(data: NotificacionPayload): Observable<any> {
-    const usuario = data.usuario_id || data.usuarioId || 'Sin Matrícula';
-    const email =
-      data.email_destino ||
-      data.emailDestino ||
-      'angel.sarmientot@alumno.buap.mx';
+  // ==========================================
+  // 📡 MÉTODOS GRPC
+  // ==========================================
 
-    this.enviarEmail(
-      email,
-      '¡Bienvenido al Sistema AGM BUAP!',
-      `Tu cuenta ha sido creada con la matrícula: <strong>${usuario}</strong>.`,
-    ).catch((err: Error) => console.error('❌ Error gRPC Bienvenida:', err));
+  @GrpcMethod('NotificacionesService')
+  async sendBienvenida(data: NotificacionRequest) {
+    console.log('📡 DATOS RECIBIDOS EN NOTIFICACIONES:', JSON.stringify(data, null, 2));
+    
+    // Intentar ambos formatos (snake_case y camelCase)
+    const nombreAlumno = data.nombre_alumno || data.nombreAlumno || 'Estudiante';
+    const materia = data.nombre_materia || data.nombreMateria || data.materia_id || data.materiaId || data.materia || 'Materia';
+    const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
 
-    return of({ success: true, message: 'Bienvenida procesada' });
+    console.log('✅ VALORES PROCESADOS:', { nombreAlumno, materia, email });
+
+    try {
+      const subject = `¡Bienvenido ${nombreAlumno} a ${materia}!`;
+      const body = `Hola ${nombreAlumno},<br><br>Te has inscrito exitosamente a la materia <strong>${materia}</strong>.<br><br>Esperamos que tengas un excelente desempeño en este curso.`;
+      
+      console.log('📧 ENVIANDO EMAIL:', { subject, to: email });
+      
+      await this.enviarEmail(email, subject, body);
+      return { success: true, message: 'Correo enviado correctamente' };
+    } catch (error) {
+      console.error('❌ Error enviando email:', (error as Error).message);
+      return { success: false, message: 'Fallo al enviar correo' };
+    }
   }
 
-  @GrpcMethod('NotificacionesService', 'SendBajaNotif')
-  grpcSendBaja(data: NotificacionPayload): Observable<any> {
+  @GrpcMethod('NotificacionesService')
+  async sendBajaNotif(data: NotificacionRequest) {
     const usuario = data.usuario_id || data.usuarioId || 'Sin Matrícula';
     const materia = data.materia_id || data.materiaId || 'Sin Materia';
-    const email =
-      data.email_destino ||
-      data.emailDestino ||
-      'angel.sarmientot@alumno.buap.mx';
+    const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
 
-    console.log(`📦 Recibido -> Usuario: ${usuario}, Materia: ${materia}`);
-
-    this.enviarEmail(
-      email,
-      'Alerta: Baja de Asignatura',
-      `Se confirma la baja de la materia: <strong>${materia}</strong> para la matrícula <strong>${usuario}</strong>.`,
-    ).catch((err: Error) => console.error('❌ Error gRPC Baja:', err));
-
-    return of({ success: true, message: 'Baja procesada' });
+    try {
+      await this.enviarEmail(
+        email,
+        'Alerta: Baja de Asignatura',
+        `Se confirma la baja de la materia: <strong>${materia}</strong> para la matrícula <strong>${usuario}</strong>.`
+      );
+      return { success: true, message: 'Baja notificada' };
+    } catch (_error) {
+      return { success: false, message: 'Error' };
+    }
   }
 
-  @GrpcMethod('NotificacionesService', 'SendActualizacion')
-  grpcSendActualizacion(data: NotificacionPayload): Observable<any> {
-    const usuario = data.usuario_id || data.usuarioId || 'Sin Matrícula';
-    const materia = data.materia_id || data.materiaId || 'Sin Materia';
-    const nota = data.nueva_nota || data.nuevaNota || 0;
-    const email =
-      data.email_destino ||
-      data.emailDestino ||
-      'angel.sarmientot@alumno.buap.mx';
+  @GrpcMethod('NotificacionesService')
+  async sendActualizacion(data: NotificacionRequest) {
+    const usuario = data.usuario_id || data.usuarioId || data.matricula || 'Sin Matrícula';
+    const materia = data.nombre_materia || data.nombreMateria || data.materia_id || data.materiaId || data.materia || 'Sin Materia';
+    const notaAnterior = data.calificacion_anterior || 0;
+    const notaNueva = data.nueva_nota || data.nuevaNota || data.calificacion_nueva || 0;
+    const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
 
-    this.enviarEmail(
-      email,
-      'Actualización de Calificación',
-      `Tu nota en <strong>${materia}</strong> ha sido actualizada (Matrícula: ${usuario}). <br> Nueva nota: <strong>${nota}</strong>`,
-    ).catch((err: Error) => console.error('❌ Error gRPC Actualización:', err));
+    try {
+      const mensaje = notaAnterior > 0 
+        ? `Tu nota en <strong>${materia}</strong> ha sido actualizada. <br> Nota anterior: <strong>${notaAnterior}</strong> <br> Nueva nota: <strong>${notaNueva}</strong>`
+        : `Tu nota en <strong>${materia}</strong> ha sido registrada: <strong>${notaNueva}</strong>`;
 
-    return of({ success: true, message: 'Actualización procesada' });
+      await this.enviarEmail(
+        email,
+        'Actualización de Calificación',
+        mensaje
+      );
+      return { success: true, message: 'Actualización notificada' };
+    } catch (_error) {
+      return { success: false, message: 'Error' };
+    }
   }
 
   private async enviarEmail(
@@ -175,24 +207,25 @@ export class AppController implements OnModuleInit {
       console.log(`✅ Correo enviado a: ${to}`);
     } catch (err) {
       console.error('❌ Error SMTP:', err);
+      throw err;
     }
   }
 
   @Post('test/baja')
-  testBaja(@Body() data: NotificacionPayload) {
-    this.grpcSendBaja(data);
+  testBaja(@Body() data: NotificacionRequest) {
+    this.sendBajaNotif(data).catch(err => console.error(err));
     return { success: true, message: 'Test de baja enviado' };
   }
 
   @Post('test/actualizacion')
-  testActualizacion(@Body() data: NotificacionPayload) {
-    this.grpcSendActualizacion(data);
+  testActualizacion(@Body() data: NotificacionRequest) {
+    this.sendActualizacion(data).catch(err => console.error(err));
     return { success: true, message: 'Test de actualización enviado' };
   }
 
   @Post('test/bienvenida')
-  testBienvenida(@Body() data: NotificacionPayload) {
-    this.grpcSendBienvenida(data);
+  testBienvenida(@Body() data: NotificacionRequest) {
+    this.sendBienvenida(data).catch(err => console.error(err));
     return { success: true, message: 'Test de bienvenida enviado' };
   }
 }
