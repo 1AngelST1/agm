@@ -256,15 +256,33 @@ export class AppController implements OnModuleInit {
 
   private async enviarNotificacionActualizacion(matricula: string, calificacion: Calificacion, nuevaNota: number, nrc: string) {
     try {
+      // 🔍 Paso 1: Obtener datos del alumno desde MS-ALUMNOS
+      const alumnoData = await firstValueFrom(
+        this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000))
+      );
+      const nombreAlumno = alumnoData?.nombre_usuario || alumnoData?.nombreUsuario || 'Estudiante';
+      const emailAlumno = alumnoData?.email_usuario || alumnoData?.emailUsuario || 'sin-email@buap.mx';
+      console.log(`✅ Alumno obtenido: ${nombreAlumno} (${emailAlumno})`);
+
+      // 🔍 Paso 2: Obtener datos de la materia desde MS-PERIODOS
+      const materiaData = await firstValueFrom(
+        this.periodosService.GetMateriaById({ materia_id: nrc }).pipe(timeout(3000))
+      );
+      const nombreMateria = materiaData?.nombre || materiaData?.nombre_materia || 'Materia';
+      console.log(`✅ Materia obtenida: ${nombreMateria}`);
+
+      // 📡 Paso 3: Enviar notificación con todos los datos
       await firstValueFrom(
         this.notificacionesService.SendActualizacion({
           matricula: matricula,
-          materia: nrc, 
+          nombreAlumno: nombreAlumno,
+          nombreMateria: nombreMateria,
+          emailDestino: emailAlumno,
           calificacion_anterior: calificacion.calificacion_ordinaria,
           calificacion_nueva: nuevaNota
-        }).pipe(timeout(3000)) // Timeout de seguridad
+        }).pipe(timeout(3000))
       );
-      console.log(`[gRPC] Notificación de actualización enviada para ${matricula}`);
+      console.log(`✅ Notificación de actualización enviada para ${matricula}`);
     } catch (error) {
       console.error('❌ Error enviando notificación de actualización (gRPC):', (error as Error).message);
     }
@@ -272,13 +290,24 @@ export class AppController implements OnModuleInit {
 
   private async enviarNotificacionBaja(matricula: string, matNombre: string) {
     try {
+      // 🔍 Paso 1: Obtener datos del alumno desde MS-ALUMNOS
+      const alumnoData = await firstValueFrom(
+        this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000))
+      );
+      const nombreAlumno = alumnoData?.nombre_usuario || alumnoData?.nombreUsuario || 'Estudiante';
+      const emailAlumno = alumnoData?.email_usuario || alumnoData?.emailUsuario || 'sin-email@buap.mx';
+      console.log(`✅ Alumno obtenido para baja: ${nombreAlumno} (${emailAlumno})`);
+
+      // 📡 Paso 2: Enviar notificación de baja con todos los datos
       await firstValueFrom(
         this.notificacionesService.SendBajaNotif({
           matricula: matricula,
-          materia: matNombre
-        }).pipe(timeout(3000)) // Timeout de seguridad
+          nombreAlumno: nombreAlumno,
+          nombreMateria: matNombre,
+          emailDestino: emailAlumno
+        }).pipe(timeout(3000))
       );
-      console.log(`[gRPC] Notificación de baja enviada para ${matricula}`);
+      console.log(`✅ Notificación de baja enviada para ${matricula}`);
     } catch (error) {
       console.error('❌ Error enviando notificación de baja (gRPC):', (error as Error).message);
     }

@@ -6,6 +6,7 @@ service NotificacionesService {
   rpc SendBienvenida (NotificacionRequest) returns (NotificacionResponse) {}
   rpc SendBajaNotif (NotificacionRequest) returns (NotificacionResponse) {}
   rpc SendActualizacion (ActualizacionRequest) returns (NotificacionResponse) {}
+  rpc SendResetPassword (ResetPasswordRequest) returns (NotificacionResponse) {}
 }
 
 message NotificacionRequest {
@@ -34,4 +35,10 @@ message ActualizacionRequest {
 message NotificacionResponse {
   bool success = 1;
   string message = 2;
+}
+
+message ResetPasswordRequest {
+  string email_destino = 1;
+  string reset_link = 2;
+  string nombre_usuario = 3;
 }

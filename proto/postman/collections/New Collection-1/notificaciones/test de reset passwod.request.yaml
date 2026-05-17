@@ -1,0 +1,16 @@
+$kind: http-request
+name: test de reset passwod
+url: http://localhost:3004/notificaciones/test/reset-password
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"email_destino\": \"angel.sarmientot@alumno.buap.mx\",\r
+
+    \  \"reset_link\": \"https://agm-buap.mx/reset?token=abc123xyz789\",\r
+
+    \  \"nombre_usuario\": \"Angel Sarmiento\"\r
+
+    }"
+order: 4451206973823360

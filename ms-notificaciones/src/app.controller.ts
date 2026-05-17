@@ -143,41 +143,55 @@ export class AppController implements OnModuleInit {
 
   @GrpcMethod('NotificacionesService')
   async sendBajaNotif(data: NotificacionRequest) {
-    const usuario = data.usuario_id || data.usuarioId || 'Sin Matrícula';
-    const materia = data.materia_id || data.materiaId || 'Sin Materia';
+    console.log('📡 DATOS RECIBIDOS (Baja):', JSON.stringify(data, null, 2));
+    
+    const nombreAlumno = data.nombre_alumno || data.nombreAlumno || 'Estudiante';
+    const materia = data.nombre_materia || data.nombreMateria || data.materia_id || data.materiaId || 'Materia';
     const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
 
+    console.log('✅ VALORES PROCESADOS (Baja):', { nombreAlumno, materia, email });
+
     try {
-      await this.enviarEmail(
-        email,
-        'Alerta: Baja de Asignatura',
-        `Se confirma la baja de la materia: <strong>${materia}</strong> para la matrícula <strong>${usuario}</strong>.`
-      );
-      return { success: true, message: 'Baja notificada' };
-    } catch (_error) {
-      return { success: false, message: 'Error' };
+      const subject = `Notificación de Baja: ${materia}`;
+      const body = `Hola ${nombreAlumno},<br><br>Te informamos que has sido dado de baja de la materia <strong>${materia}</strong>.<br><br>Si tienes alguna duda, contacta con la administración académica.`;
+      
+      console.log('📧 ENVIANDO EMAIL (Baja):', { subject, to: email });
+      
+      await this.enviarEmail(email, subject, body);
+      return { success: true, message: 'Correo de baja enviado correctamente' };
+    } catch (error) {
+      console.error('❌ Error enviando email de baja:', (error as Error).message);
+      return { success: false, message: 'Fallo al enviar correo' };
     }
   }
 
   @GrpcMethod('NotificacionesService')
   async sendActualizacion(data: NotificacionRequest) {
-    const usuario = data.usuario_id || data.usuarioId || data.matricula || 'Sin Matrícula';
-    const materia = data.nombre_materia || data.nombreMateria || data.materia_id || data.materiaId || data.materia || 'Sin Materia';
+    console.log('📡 DATOS RECIBIDOS (Actualización):', JSON.stringify(data, null, 2));
+    
+    const nombreAlumno = data.nombre_alumno || data.nombreAlumno || 'Estudiante';
+    const materia = data.nombre_materia || data.nombreMateria || data.materia_id || data.materiaId || data.materia || 'Materia';
     const notaAnterior = data.calificacion_anterior || 0;
     const notaNueva = data.nueva_nota || data.nuevaNota || data.calificacion_nueva || 0;
     const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
+
+    console.log('✅ VALORES PROCESADOS (Actualización):', { nombreAlumno, materia, notaAnterior, notaNueva, email });
 
     try {
       const mensaje = notaAnterior > 0 
         ? `Tu nota en <strong>${materia}</strong> ha sido actualizada. <br> Nota anterior: <strong>${notaAnterior}</strong> <br> Nueva nota: <strong>${notaNueva}</strong>`
         : `Tu nota en <strong>${materia}</strong> ha sido registrada: <strong>${notaNueva}</strong>`;
 
+      const subject = `Actualización de Calificación en ${materia}`;
+      
+      console.log('📧 ENVIANDO EMAIL (Actualización):', { subject, to: email });
+
       await this.enviarEmail(
         email,
-        'Actualización de Calificación',
-        mensaje
+        subject,
+        `Hola ${nombreAlumno},<br><br>${mensaje}<br><br>Esperamos continúes con tu desempeño.`
       );
-      return { success: true, message: 'Actualización notificada' };
+      return { success: true, message: 'Actualización notificada correctamente' };
     } catch (_error) {
       return { success: false, message: 'Error' };
     }
@@ -227,5 +241,39 @@ export class AppController implements OnModuleInit {
   testBienvenida(@Body() data: NotificacionRequest) {
     this.sendBienvenida(data).catch(err => console.error(err));
     return { success: true, message: 'Test de bienvenida enviado' };
+  }
+
+  // ==========================================
+  // 🔐 RESET DE CONTRASEÑA
+  // ==========================================
+
+  @GrpcMethod('NotificacionesService')
+  async sendResetPassword(data: { email_destino: string; reset_link: string; nombre_usuario?: string }) {
+    console.log('📡 DATOS RECIBIDOS (Reset Password):', JSON.stringify(data, null, 2));
+    
+    const email = data.email_destino || 'sin-email@buap.mx';
+    const nombreUsuario = data.nombre_usuario || 'Usuario';
+    const resetLink = data.reset_link || 'https://agm-buap.mx/reset';
+
+    console.log('✅ VALORES PROCESADOS (Reset):', { email, nombreUsuario, resetLink });
+
+    try {
+      const subject = 'Recuperación de Contraseña - Sistema AGM BUAP';
+      const body = `Hola ${nombreUsuario},<br><br>Has solicitado recuperar tu contraseña. Haz clic en el siguiente enlace para establecer una nueva contraseña:<br><br><a href="${resetLink}" style="background-color: #003b5c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Recuperar Contraseña</a><br><br>Este enlace expira en 1 hora.<br><br>Si no solicitaste este cambio, ignora este correo.`;
+      
+      console.log('📧 ENVIANDO EMAIL (Reset):', { subject, to: email });
+      
+      await this.enviarEmail(email, subject, body);
+      return { success: true, message: 'Correo de recuperación enviado correctamente' };
+    } catch (error) {
+      console.error('❌ Error enviando email de reset:', (error as Error).message);
+      return { success: false, message: 'Fallo al enviar correo' };
+    }
+  }
+
+  @Post('test/reset-password')
+  testResetPassword(@Body() data: { email_destino: string; reset_link: string; nombre_usuario?: string }) {
+    this.sendResetPassword(data).catch(err => console.error(err));
+    return { success: true, message: 'Test de reset enviado' };
   }
 }
