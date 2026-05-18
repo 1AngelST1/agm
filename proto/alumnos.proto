@@ -2,33 +2,24 @@ syntax = "proto3";
 
 package alumnos;
 
-// Servicio para gestionar alumnos
 service AlumnosService {
-  // Obtiene los datos de un alumno por su ID
-  rpc GetAlumnoById (GetAlumnoRequest) returns (AlumnoResponse);
-  
-  // Obtiene los datos de un alumno por su matrícula (usado por ms-calificaciones)
-  rpc GetAlumnoByMatricula (GetAlumnoByMatriculaRequest) returns (AlumnoResponse);
-
-  // Obtiene los datos de un alumno por su user_id (usado por ms-calificaciones para kardex)
-  rpc GetAlumnoByUserId (GetAlumnoByUserIdRequest) returns (AlumnoResponse);
+  rpc GetAlumnoByMatricula (AlumnoMatriculaRequest) returns (AlumnoResponse);
+  rpc GetAlumnoByUserId (AlumnoUserIdRequest) returns (AlumnoResponse);
 }
 
-message GetAlumnoRequest {
-  string alumno_id = 1;
-}
-
-message GetAlumnoByMatriculaRequest {
+message AlumnoMatriculaRequest {
   string matricula = 1;
 }
 
-message GetAlumnoByUserIdRequest {
+message AlumnoUserIdRequest {
   string user_id = 1;
 }
 
 message AlumnoResponse {
-  string alumno_id = 1;
+  // 🔥 Usamos camelCase aquí para coincidir con nuestro truco en el controlador
+  string alumnoId = 1;
   string nombre = 2;
   string matricula = 3;
-  string user_id = 4;
+  string userId = 4;
+  string carrera = 5;
 }

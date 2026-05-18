@@ -54,7 +54,7 @@ interface AuthService {
 }
 
 interface PeriodosService {
-  GetMateriaById(data: { materia_id: string }): Observable<any>;
+  GetMateriaById(data: any): Observable<any>;
 }
 
 interface RequestUser {
@@ -201,16 +201,18 @@ export class AppController implements OnModuleInit {
       throw new NotFoundException('No se puede inscribir: El alumno no existe en el sistema.');
     }
 
+    // Buscamos si ya tiene una inscripción ACTIVA
     const yaInscrito = await this.inscripcionRepository.findOne({
       where: { 
         matricula_alumno: body.matricula_alumno, 
-        nrc_materia: body.nrc_materia 
+        nrc_materia: body.nrc_materia,
+        estatus: 'activo'
       }
     });
 
     if (yaInscrito) {
       return { 
-        message: 'El alumno ya se encuentra inscrito en esta asignatura.', 
+        message: 'El alumno ya se encuentra inscrito activamente en esta asignatura.', 
         inscripcion: yaInscrito 
       };
     }
@@ -219,14 +221,19 @@ export class AppController implements OnModuleInit {
     let nombreMateria = `NRC: ${body.nrc_materia}`;
     let nombreAlumno = 'Estudiante';
 
-    // 1️⃣ Intentar obtener el nombre de la materia desde ms-periodos
+    // 1️⃣ Intentar obtener el nombre de la materia desde ms-periodos (CON BOMBARDEO)
     try {
       console.log('🔍 Consultando materia con NRC:', body.nrc_materia);
       const materiaInfo = await lastValueFrom(
-        this.periodosService.GetMateriaById({ materia_id: body.nrc_materia }).pipe(timeout(3000))
+        this.periodosService.GetMateriaById({ 
+          materia_id: body.nrc_materia,
+          materiaId: body.nrc_materia,
+          nrc: body.nrc_materia
+        } as any).pipe(timeout(3000))
       );
       console.log('✅ Datos de materia:', materiaInfo);
-      if (materiaInfo && materiaInfo.nombre) {
+      
+      if (materiaInfo && materiaInfo.nombre && materiaInfo.nombre !== 'Materia no encontrada') {
         nombreMateria = `${materiaInfo.clave} - ${materiaInfo.nombre}`;
         console.log('📚 Nombre materia actualizado:', nombreMateria);
       }
@@ -262,6 +269,7 @@ export class AppController implements OnModuleInit {
       id: `INC-${sufijoAleatorio}`,
       matricula_alumno: body.matricula_alumno,
       nrc_materia: body.nrc_materia,
+      estatus: 'activo'
     });
 
     await this.inscripcionRepository.save(nuevaInscripcion);
@@ -292,6 +300,40 @@ export class AppController implements OnModuleInit {
     };
   }
 
+  /**
+   * ✅ DELETE /alumnos/desinscribir/:nrc/:matricula
+   * Dar de baja una inscripción (Soft Delete)
+   */
+  @Delete('desinscribir/:nrc/:matricula')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente', 'alumno')
+  async darDeBajaInscripcion(
+    @Param('nrc') nrc: string,
+    @Param('matricula') matricula: string,
+    @Request() req: { user: RequestUser },
+  ) {
+    const inscripcion = await this.inscripcionRepository.findOne({
+      where: { 
+        matricula_alumno: matricula, 
+        nrc_materia: nrc,
+        estatus: 'activo' 
+      }
+    });
+
+    if (!inscripcion) {
+      throw new NotFoundException('El alumno no está inscrito de forma activa en esta materia');
+    }
+
+    // 🔥 Cambio de estatus a 'baja' en lugar de borrar el registro
+    inscripcion.estatus = 'baja';
+    await this.inscripcionRepository.save(inscripcion);
+
+    return {
+      success: true,
+      message: `El alumno con matrícula ${matricula} ha sido dado de baja de la materia correctamente.`,
+    };
+  }
+
   @Delete('baja/:matricula')
   @UseGuards(JwtAuthGuard)
   async darDeBajaAlumno(
@@ -314,10 +356,10 @@ export class AppController implements OnModuleInit {
     }
 
     await this.alumnoRepository.delete(alumnoLocal.id);
-    return { success: true, message: 'Alumno dado de baja' };
+    return { success: true, message: 'Alumno dado de baja del sistema general' };
   }
 
-@GrpcMethod('AlumnosService', 'GetAlumnoByMatricula')
+  @GrpcMethod('AlumnosService', 'GetAlumnoByMatricula')
   async getAlumnoByMatricula(data: { matricula: string }) {
     console.log('GetAlumnoByMatricula recibido:', JSON.stringify(data));
     
@@ -364,4 +406,3 @@ export class AppController implements OnModuleInit {
     };
   }
 }
-

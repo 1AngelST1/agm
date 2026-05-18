@@ -2,7 +2,7 @@ import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity('inscripciones')
 export class Inscripcion {
-  @PrimaryColumn() // Quitamos el 'uuid' y lo dejamos como columna primaria normal
+  @PrimaryColumn()
   id!: string;
 
   @Column()
@@ -10,6 +10,14 @@ export class Inscripcion {
 
   @Column()
   nrc_materia!: string;
+
+  // 🔥 AQUÍ ESTÁ EL CAMPO QUE LE FALTABA A TYPESCRIPT
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'activo',
+  })
+  estatus!: string;
 
   @CreateDateColumn()
   fecha_inscripcion!: Date;

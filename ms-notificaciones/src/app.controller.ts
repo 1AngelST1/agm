@@ -144,7 +144,7 @@ export class AppController implements OnModuleInit {
     }
   }
 
-@GrpcMethod('NotificacionesService')
+  @GrpcMethod('NotificacionesService')
   async sendBajaNotif(data: NotificacionRequest) {
     console.log('📡 DATOS RECIBIDOS (Baja):', JSON.stringify(data, null, 2));
     
