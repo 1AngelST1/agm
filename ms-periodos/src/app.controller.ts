@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -16,6 +17,11 @@ import { Materia } from './materia.entity';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
+
+// Definimos una interfaz para tipar los datos entrantes de gRPC y evitar el uso de 'any'
+interface GetMateriaRequest {
+  nrc?: string;
+}
 
 @Controller('periodos')
 export class AppController {
@@ -127,19 +133,29 @@ export class AppController {
   }
 
   @GrpcMethod('PeriodosService', 'GetMateriaById')
-  async getMateriaById(data: { materia_id: string }) {
+  async getMateriaById(data: GetMateriaRequest) {
     try {
-      // Buscar por NRC (el materia_id es el NRC en tu sistema)
-      const materia = await this.appService.obtenerMateriaPorNrc(
-        data.materia_id,
-      );
+      console.log('GetMateriaById recibido - data:', JSON.stringify(data));
+      
+      const nrc = data?.nrc;
+      console.log('NRC extraído:', nrc);
+      
+      if (!nrc) {
+        throw new Error('NRC no recibido en GetMateriaById');
+      }
+      
+      // Buscar por NRC
+      const materia = await this.appService.obtenerMateriaPorNrc(String(nrc));
+      
+      console.log('Materia encontrada:', materia.clave, '-', materia.nombre);
+      
       return {
         clave: materia.clave,
         nombre: materia.nombre,
-        creditos: 6.0, // Valor estándar según los PDFs académicos
+        creditos: 6.0,
       };
-    } catch {
-      // Si no existe, retornamos un objeto vacío para que gRPC no crashee
+    } catch (error) {
+      console.error('Error en GetMateriaById:', (error as Error).message);
       return {
         clave: '',
         nombre: 'Materia no encontrada',

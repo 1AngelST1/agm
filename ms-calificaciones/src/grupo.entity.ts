@@ -16,8 +16,8 @@ export class Grupo {
   @JoinColumn({ name: 'materia_clave' })
   materia!: Materia;
 
-  @Column()
-  docente_id!: string; // Ej. 'usr_abc123' (El ID del profesor en ms-auth)
+  @Column({ nullable: true })
+  docente_id?: string; // Ej. 'usr_abc123' (El ID del profesor en ms-auth) - nullable para testing
 
   @Column()
   seccion!: string; // Ej. '001'

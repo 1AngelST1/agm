@@ -8,7 +8,10 @@ import { AppService } from './app.service';
 import { Materia } from './materia.entity';
 import { Grupo } from './grupo.entity';
 import { Calificacion } from './calificacion.entity';
-import { JwtStrategy } from './auth/jwt.strategy';
+import { CalificacionFinal } from './calificacion-final.entity';
+import { Ponderacion } from './ponderacion.entity';
+import { Actividad } from './actividad.entity';
+import { JwtStrategy } from './guards/jwt.strategy';
 
 // Función para obtener la ruta de los .proto
 const getProtoPath = (protoFile: string) => {
@@ -28,10 +31,10 @@ const getProtoPath = (protoFile: string) => {
       username: process.env.DB_USERNAME || 'admin',
       password: process.env.DB_PASSWORD || 'adminpassword',
       database: process.env.DB_DATABASE || 'agm_calificaciones_db',
-      entities: [Materia, Grupo, Calificacion],
+      entities: [Materia, Grupo, Calificacion, CalificacionFinal, Ponderacion, Actividad],
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([Materia, Grupo, Calificacion]),
+    TypeOrmModule.forFeature([Materia, Grupo, Calificacion, CalificacionFinal, Ponderacion, Actividad]),
 
     // 📞 REGISTRO DE TODOS LOS CLIENTES gRPC
     ClientsModule.register([
@@ -50,7 +53,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'alumnos',
           protoPath: getProtoPath('alumnos.proto'),
-          url: `${process.env.ALUMNOS_GRPC_HOST || 'localhost'}:${process.env.ALUMNOS_GRPC_PORT || '5001'}`,
+          url: `${process.env.ALUMNOS_GRPC_HOST || 'localhost'}:${process.env.ALUMNOS_GRPC_PORT || '5002'}`,
         },
       },
       // 🚀 CONEXIÓN HACIA NOTIFICACIONES
@@ -60,7 +63,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'notificaciones',
           protoPath: getProtoPath('notificaciones.proto'),
-          url: `${process.env.NOTIF_GRPC_HOST || 'localhost'}:${process.env.NOTIF_GRPC_PORT || '5003'}`,
+          url: `${process.env.NOTIF_GRPC_HOST || 'localhost'}:${process.env.NOTIF_GRPC_PORT || '5014'}`,
         },
       },
       // 🚀 CONEXIÓN HACIA PERIODOS

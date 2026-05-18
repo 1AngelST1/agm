@@ -19,7 +19,7 @@ message PeriodoResponse {
 }
 
 message MateriaRequest {
-  string materia_id = 1;
+  string nrc = 1;
 }
 
 message MateriaResponse {

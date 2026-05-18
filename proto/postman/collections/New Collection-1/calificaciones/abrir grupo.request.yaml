@@ -8,9 +8,7 @@ body:
 
     \  \"nrc\": \"50130\",\r
 
-    \  \"materia_clave\": \"ITIS 260\",\r
-
-    \  \"docente_id\": \"usr_abfa4316\", \r
+    \  \"materia_clave\": \"ITIS260\",\r
 
     \  \"seccion\": \"001\",\r
 
@@ -20,5 +18,5 @@ body:
 auth:
   type: bearer
   credentials:
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfYWJmYTQzMTYiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3ODAyMTgxNSwiZXhwIjoxNzc4MDI5MDE1fQ.6T0lkJOpJjywe02SCqjMIG8NSK7QZSwiuihwfj7r2I4
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOGJmNWM2NGQiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3OTA4NTA0OCwiZXhwIjoxNzc5MDkyMjQ4fQ.hlP90LENqQZRVeShi0W7O6qOFwW_9y-yqgtCopS0dVw
 order: 755019656320052

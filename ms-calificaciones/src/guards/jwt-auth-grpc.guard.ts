@@ -45,9 +45,9 @@ export class JwtAuthGuard implements CanActivate, OnModuleInit {
       const result = await firstValueFrom(
         this.authService.ValidateToken({ token }),
       );
-      // gRPC puede devolver snake_case (user_id) o camelCase (userId)
+      // gRPC retorna userId (camelCase) desde ms-auth
       (request as any).user = {
-        user_id: (result as any).user_id || (result as any).userId,
+        userId: (result as any).userId,
         email: (result as any).email,
         role: (result as any).role,
       };

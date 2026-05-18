@@ -30,6 +30,8 @@ message ActualizacionRequest {
   float calificacion_anterior = 7;
   float calificacion_nueva = 8;
   string materia = 9;
+  string nombre_alumno = 10;
+  string tipo_calificacion = 11;  // 'examen', 'tarea', 'proyecto', 'final'
 }
 
 message NotificacionResponse {

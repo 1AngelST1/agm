@@ -6,15 +6,19 @@ body:
   type: json
   content: "{\r
 
-    \  \"clave\": \"ITIS 260\",\r
+    \  \"clave\": \"ITIS260\",\r
 
     \  \"nombre\": \"Servicios Web\",\r
 
-    \  \"creditos\": 6.000\r
+    \  \"creditos\": 6,\r
+
+    \  \"horas_teoricas\": 4,\r
+
+    \  \"horas_practicas\": 2\r
 
     }"
 auth:
   type: bearer
   credentials:
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfYWJmYTQzMTYiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3ODAyMDgzMSwiZXhwIjoxNzc4MDI4MDMxfQ.9VVnzhs5TAv5v77MUXcSHrMaEVT_myWa21Ltb5x45f8
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOGJmNWM2NGQiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3OTA4NTA0OCwiZXhwIjoxNzc5MDkyMjQ4fQ.hlP90LENqQZRVeShi0W7O6qOFwW_9y-yqgtCopS0dVw
 order: 1778021147844

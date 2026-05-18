@@ -317,8 +317,10 @@ export class AppController implements OnModuleInit {
     return { success: true, message: 'Alumno dado de baja' };
   }
 
-  @GrpcMethod('AlumnosService', 'GetAlumnoByMatricula')
+@GrpcMethod('AlumnosService', 'GetAlumnoByMatricula')
   async getAlumnoByMatricula(data: { matricula: string }) {
+    console.log('GetAlumnoByMatricula recibido:', JSON.stringify(data));
+    
     const alumno = await this.alumnoRepository.findOne({
       where: { matricula: data.matricula },
     });
@@ -329,12 +331,17 @@ export class AppController implements OnModuleInit {
       );
     }
 
-    return {
-      alumno_id: alumno.id,
+    // 🔥 EL TRUCO ESTÁ AQUÍ: Usamos camelCase para engañar al formateador de NestJS
+    const response = {
+      alumnoId: alumno.id,           // En lugar de alumno_id
+      nombre: 'Estudiante',
       matricula: alumno.matricula,
-      user_id: alumno.user_id,
-      carrera: alumno.carrera,
+      userId: alumno.user_id || '',  // En lugar de user_id
     };
+
+    console.log('📤 Respuesta gRPC (Lista para cruzar la red):', JSON.stringify(response, null, 2));
+    
+    return response;
   }
 
   @GrpcMethod('AlumnosService', 'GetAlumnoByUserId')
@@ -357,3 +364,4 @@ export class AppController implements OnModuleInit {
     };
   }
 }
+
