@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package reportes;
+
+service ReportesService {
+  rpc GenerateReport (ReportRequest) returns (ReportResponse);
+}
+
+message ReportRequest {
+  string materia_id = 1;
+  string formato = 2; // "pdf" o "xls"
+}
+
+message ReportResponse {
+  bytes file_bytes = 1; // Transmisión binaria del archivo generado
+  string file_name = 2;
+}
