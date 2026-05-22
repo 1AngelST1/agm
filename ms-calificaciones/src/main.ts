@@ -24,9 +24,10 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      package: 'calificaciones', // Coincide con tu calificaciones.proto (si lo necesitas)
+      package: 'calificaciones', 
       protoPath: getProtoPath(),
-      url: 'localhost:5003', // ms-auth usa 5000, ms-alumnos usa 5001, ms-calificaciones usa 5003
+      url: '0.0.0.0:5003', // ms-auth usa 5000, ms-alumnos usa 5001, ms-calificaciones usa 5003
+      loader: {keepCase: true}, // Para mantener los nombres de los campos tal cual en el proto
     },
   });
 

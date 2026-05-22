@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -14,6 +15,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { GrpcMethod } from '@nestjs/microservices'; // 🔥 Importación obligatoria para gRPC
 import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -233,7 +235,7 @@ export class AppController implements OnModuleInit {
     return calificacionGuardada;
   }
 
-/**
+  /**
    * ✅ PUT /:nrc/:matricula
    * Actualizar calificación (admin, docente)
    */
@@ -248,14 +250,12 @@ export class AppController implements OnModuleInit {
     
     if (!calificacion) throw new NotFoundException('Registro no encontrado');
 
-    // 🔥 LA MAGIA: Guardamos la nota vieja antes de que la sobrescribas
     const notaAnterior = calificacion.calificacion_ordinaria;
 
     calificacion.calificacion_ordinaria = dto.calificacion_ordinaria;
     calificacion.estatus = dto.calificacion_ordinaria >= 6 ? 'Aprobado' : 'Reprobado';
     const resultado = await this.calificacionRepository.save(calificacion);
 
-    // Le pasamos la 'notaAnterior' como un número suelto a la función del correo
     await this.enviarNotificacionActualizacion(matricula, notaAnterior, dto.calificacion_ordinaria, nrc, calificacion.tipo_calificacion || 'ordinaria');
 
     return resultado;
@@ -303,7 +303,7 @@ export class AppController implements OnModuleInit {
   // ✉️ MÉTODOS PRIVADOS PARA NOTIFICACIONES
   // ==========================================
 
-private async enviarNotificacionActualizacion(matricula: string, notaAnterior: number, nuevaNota: number, nrc: string, tipo_calificacion: string) {
+  private async enviarNotificacionActualizacion(matricula: string, notaAnterior: number, nuevaNota: number, nrc: string, tipo_calificacion: string) {
     try {
       const alumnoData = await firstValueFrom(this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000)));
       const userId = alumnoData?.userId || alumnoData?.user_id || alumnoData?.['user_id'];
@@ -323,7 +323,7 @@ private async enviarNotificacionActualizacion(matricula: string, notaAnterior: n
           nombreAlumno: nombreAlumno,
           nombreMateria: nombreMateria,
           emailDestino: emailAlumno,
-          calificacionAnterior: Number(notaAnterior), // 🔥 Usamos la nota congelada
+          calificacionAnterior: Number(notaAnterior), 
           calificacion_anterior: Number(notaAnterior),
           calificacionNueva: Number(nuevaNota),
           calificacion_nueva: Number(nuevaNota),
@@ -615,17 +615,22 @@ private async enviarNotificacionActualizacion(matricula: string, notaAnterior: n
         const tareaCal = calificacionesPorTipo.find(c => c.tipo_calificacion === 'tarea')?.calificacion_ordinaria || 0;
         const proyectoCal = calificacionesPorTipo.find(c => c.tipo_calificacion === 'proyecto')?.calificacion_ordinaria || 0;
 
-        const promedioPonderado = (examenCal * ponderacion.examen_porcentaje / 100) +
-                                 (tareaCal * ponderacion.tarea_porcentaje / 100) +
-                                 (proyectoCal * ponderacion.proyecto_porcentaje / 100);
+        // 🔥 Convertir a números reales (protobuf rechaza strings para campos double)
+        const examenNum = Number(examenCal) || 0;
+        const tareaNum = Number(tareaCal) || 0;
+        const proyectoNum = Number(proyectoCal) || 0;
+
+        const promedioPonderado = (examenNum * Number(ponderacion.examen_porcentaje) / 100) +
+                                  (tareaNum * Number(ponderacion.tarea_porcentaje) / 100) +
+                                  (proyectoNum * Number(ponderacion.proyecto_porcentaje) / 100);
 
         return {
           matricula: cal.matricula_alumno,
           nombre_estudiante: nombreEstudiante,
-          calificacion_examen: examenCal,
-          calificacion_tarea: tareaCal,
-          calificacion_proyecto: proyectoCal,
-          promedio_ponderado: Math.round(promedioPonderado * 100) / 100,
+          calificacion_examen: examenNum,
+          calificacion_tarea: tareaNum,
+          calificacion_proyecto: proyectoNum,
+          promedio_ponderado: Number((Math.round(promedioPonderado * 100) / 100).toFixed(2)),
           estatus: promedioPonderado >= 6 ? 'Aprobado' : 'Reprobado',
         };
       })
@@ -645,10 +650,51 @@ private async enviarNotificacionActualizacion(matricula: string, notaAnterior: n
       total_estudiantes: sinDuplicados.length,
       calificaciones: sinDuplicados,
       ponderaciones: {
-        examen: ponderacion.examen_porcentaje,
-        tarea: ponderacion.tarea_porcentaje,
-        proyecto: ponderacion.proyecto_porcentaje,
+        examen: Number(ponderacion.examen_porcentaje) || 0,
+        tarea: Number(ponderacion.tarea_porcentaje) || 0,
+        proyecto: Number(ponderacion.proyecto_porcentaje) || 0,
       },
     };
+  } // 🔥 Cierre correcto del método obtenerConcentrado
+
+  // ==========================================
+  // 📡 MÉTODOS GRPC (Para comunicarse con ms-reportes)
+  // ==========================================
+  @GrpcMethod('CalificacionesService', 'GetConcentrado')
+  async getConcentradoGrpc(data: { nrc: string }) {
+    console.log(`📡 [gRPC] Solicitud de concentrado recibida para NRC: ${data.nrc}`);
+    
+    const resultado = await this.obtenerConcentrado(data.nrc);
+    
+    console.log('🔍 ANTES DE SERIALIZAR gRPC:', JSON.stringify(resultado, null, 2));
+    
+    // 🔥 Map explícito para asegurar que todos los campos se serializan correctamente
+    const respuestaFormato = {
+      nrc_grupo: String(resultado.nrc_grupo),
+      materia: {
+        clave: String(resultado.materia.clave),
+        nombre: String(resultado.materia.nombre),
+      },
+      periodo: String(resultado.periodo),
+      total_estudiantes: Number(resultado.total_estudiantes),
+      calificaciones: resultado.calificaciones.map((cal: any) => ({
+        matricula: String(cal.matricula),
+        nombre_estudiante: String(cal.nombre_estudiante),
+        calificacion_examen: Number(cal.calificacion_examen),
+        calificacion_tarea: Number(cal.calificacion_tarea),
+        calificacion_proyecto: Number(cal.calificacion_proyecto),
+        promedio_ponderado: Number(cal.promedio_ponderado),
+        estatus: String(cal.estatus),
+      })),
+      ponderaciones: {
+        examen: Number(resultado.ponderaciones.examen),
+        tarea: Number(resultado.ponderaciones.tarea),
+        proyecto: Number(resultado.ponderaciones.proyecto),
+      },
+    };
+    
+    console.log('🔍 DESPUÉS DE MAPEAR:', JSON.stringify(respuestaFormato, null, 2));
+    
+    return respuestaFormato;
   }
-}
+} // Cierre correcto de la clase AppController

@@ -5,6 +5,9 @@ package calificaciones;
 service CalificacionesService {
   rpc GetCalificacionesByMatricula(GetCalificacionesRequest) returns (CalificacionesResponse);
   rpc CreateCalificacion(CreateCalificacionRequest) returns (CalificacionResponse);
+  
+  // 🔥 AQUÍ ESTÁ EL MÉTODO QUE FALTABA
+  rpc GetConcentrado(ConcentradoRequest) returns (ConcentradoResponse);
 }
 
 message GetCalificacionesRequest {
@@ -42,4 +45,42 @@ message Grupo {
   string docente_id = 3;
   string seccion = 4;
   string periodo = 5;
+}
+
+// ===============================================
+// 🔥 MENSAJES NUEVOS PARA EL REPORTE DE CONCENTRADO
+// ===============================================
+
+message ConcentradoRequest {
+  string nrc = 1;
+}
+
+message MateriaInfo {
+  string clave = 1;
+  string nombre = 2;
+}
+
+message PonderacionInfo {
+  double examen = 1;
+  double tarea = 2;
+  double proyecto = 3;
+}
+
+message AlumnoNota {
+  string matricula = 1;
+  string nombre_estudiante = 2;
+  double calificacion_examen = 3;
+  double calificacion_tarea = 4;
+  double calificacion_proyecto = 5;
+  double promedio_ponderado = 6;
+  string estatus = 7;
+}
+
+message ConcentradoResponse {
+  string nrc_grupo = 1;
+  MateriaInfo materia = 2;
+  string periodo = 3;
+  int32 total_estudiantes = 4;
+  repeated AlumnoNota calificaciones = 5; 
+  PonderacionInfo ponderaciones = 6;
 }

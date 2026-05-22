@@ -18,7 +18,9 @@ const getProtoPath = (protoFile: string) => {
   if (process.env.NODE_ENV === 'production') {
     return `/app/proto/${protoFile}`;
   }
-  return path.join(__dirname, `../../proto/${protoFile}`);
+  const proto = path.join(__dirname, `../../proto/${protoFile}`);
+  console.log(`🔧 [ms-calificaciones] Cargando proto: ${proto}`);
+  return proto;
 };
 
 @Module({

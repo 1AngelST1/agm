@@ -1,37 +1,40 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { Periodo } from './periodo.entity';
-import { Materia } from './materia.entity';
+import * as path from 'path';
+
+// Función para obtener la ruta de los .proto
+const getProtoPath = (protoFile: string) => {
+  if (process.env.NODE_ENV === 'production') {
+    return `/app/proto/${protoFile}`;
+  }
+  const proto = path.join(__dirname, `../../proto/${protoFile}`);
+  console.log(`🔧 [ms-reportes] Cargando proto: ${proto}`);
+  return proto;
+};
 
 @Module({
   imports: [
-    // 🗄️ Base de datos
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME || 'admin',
-      password: process.env.DB_PASSWORD || 'adminpassword',
-      database: process.env.DB_DATABASE || 'agm_periodos_db',
-      entities: [Periodo, Materia],
-      synchronize: true,
-      logging: process.env.NODE_ENV !== 'production',
-    }),
-    TypeOrmModule.forFeature([Periodo, Materia]),
-
-    // 🔐 Cliente gRPC para conectar a MS-Auth
     ClientsModule.register([
       {
-        name: 'AUTH_SERVICE',
+        name: 'CALIFICACIONES_SERVICE',
         transport: Transport.GRPC,
         options: {
-          package: 'auth',
-          protoPath: join(__dirname, '../../proto/auth.proto'),
-          url: process.env.AUTH_GRPC_URL || 'localhost:5000',
+          package: 'calificaciones',
+          protoPath: getProtoPath('calificaciones.proto'),
+          url: 'localhost:5003',
+          loader: { keepCase: true }, // 🔥 LÍNEA MÁGICA RECEPTORA
+        },
+      },
+      {
+        name: 'ALUMNOS_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'alumnos',
+          protoPath: getProtoPath('alumnos.proto'),
+          url: 'localhost:5002',
+          loader: { keepCase: true }, // 🔥 LÍNEA MÁGICA RECEPTORA
         },
       },
     ]),
