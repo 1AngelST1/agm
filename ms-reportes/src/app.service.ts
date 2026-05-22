@@ -3,23 +3,18 @@
 /* eslint-disable prettier/prettier */
 
 import { Injectable, Inject, OnModuleInit, HttpException, HttpStatus } from '@nestjs/common';
-import type { ClientGrpc } from '@nestjs/microservices'; // 🔥 Aquí agregamos 'type'
+import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom, Observable } from 'rxjs';
 import * as ExcelJS from 'exceljs';
 
 // Interfaz para callar a ESLint
 interface AlumnoCalificado {
   matricula: string;
-  nombreEstudiante?: string;
-  nombre_estudiante?: string;
-  calificacionExamen?: number;
-  calificacion_examen?: number;
-  calificacionTarea?: number;
-  calificacion_tarea?: number;
-  calificacionProyecto?: number;
-  calificacion_proyecto?: number;
-  promedioPonderado?: number;
-  promedio_ponderado?: number;
+  nombre_estudiante: string;
+  calificacion_examen: number;
+  calificacion_tarea: number;
+  calificacion_proyecto: number;
+  promedio_ponderado: number;
   estatus: string;
 }
 
@@ -49,13 +44,8 @@ export class AppService implements OnModuleInit {
         this.calificacionesService.getConcentrado({ nrc }),
       );
 
-      console.log('📦 CONCENTRADO DATA RECIBIDO:', JSON.stringify(concentradoData, null, 2));
-      console.log('📦 Keys en concentradoData:', Object.keys(concentradoData || {}));
-      console.log('📦 calificaciones:', concentradoData?.calificaciones);
-      console.log('📦 numero de calificaciones:', concentradoData?.calificaciones?.length);
-
       if (!concentradoData || !concentradoData.calificaciones) {
-        throw new Error(`No se encontraron datos para este grupo. Datos: ${JSON.stringify(concentradoData)}`);
+        throw new Error('No se encontraron datos para este grupo');
       }
 
       console.log('✅ Datos recibidos, dibujando Excel...');
@@ -64,12 +54,16 @@ export class AppService implements OnModuleInit {
       workbook.creator = 'Sistema AGM BUAP';
       const worksheet = workbook.addWorksheet(`Acta - ${nrc}`);
 
+      // 🔥 Obtenemos las ponderaciones que viajaron por gRPC
+      const pond = concentradoData.ponderaciones;
+
+      // 🔥 Inyectamos los porcentajes dinámicamente en los títulos
       worksheet.columns = [
         { header: 'Matrícula', key: 'matricula', width: 15 },
         { header: 'Nombre del Alumno', key: 'nombre', width: 40 },
-        { header: 'Examen', key: 'examen', width: 12 },
-        { header: 'Tareas', key: 'tarea', width: 12 },
-        { header: 'Proyecto', key: 'proyecto', width: 12 },
+        { header: `Examen (${pond.examen || 40}%)`, key: 'examen', width: 15 },
+        { header: `Tareas (${pond.tarea || 30}%)`, key: 'tarea', width: 15 },
+        { header: `Proyecto (${pond.proyecto || 30}%)`, key: 'proyecto', width: 15 },
         { header: 'Prom. Final', key: 'promedio', width: 15 },
         { header: 'Estatus', key: 'estatus', width: 15 },
       ];
@@ -85,14 +79,13 @@ export class AppService implements OnModuleInit {
       const alumnos: AlumnoCalificado[] = concentradoData.calificaciones;
       
       alumnos.forEach((alumno) => {
-        // 🔥 Protobuf convierte snake_case a camelCase en JavaScript
         worksheet.addRow({
           matricula: alumno.matricula,
-          nombre: alumno.nombreEstudiante || alumno.nombre_estudiante,
-          examen: alumno.calificacionExamen || alumno.calificacion_examen,
-          tarea: alumno.calificacionTarea || alumno.calificacion_tarea,
-          proyecto: alumno.calificacionProyecto || alumno.calificacion_proyecto,
-          promedio: alumno.promedioPonderado || alumno.promedio_ponderado,
+          nombre: alumno.nombre_estudiante,
+          examen: alumno.calificacion_examen,
+          tarea: alumno.calificacion_tarea,
+          proyecto: alumno.calificacion_proyecto,
+          promedio: alumno.promedio_ponderado,
           estatus: alumno.estatus,
         });
       });

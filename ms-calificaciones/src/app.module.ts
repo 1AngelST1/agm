@@ -75,7 +75,8 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'periodos',
           protoPath: getProtoPath('periodos.proto'),
-          url: `${process.env.PERIODOS_GRPC_HOST || 'localhost'}:${process.env.PERIODOS_GRPC_PORT || '5001'}`,
+          url: '0.0.0.0:5001',
+          loader: { keepCase: true },
         },
       },
     ]),

@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -15,7 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { GrpcMethod } from '@nestjs/microservices'; // 🔥 Importación obligatoria para gRPC
+import { GrpcMethod } from '@nestjs/microservices';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -91,28 +90,16 @@ export class AppController implements OnModuleInit {
     this.periodosService = this.periodosClient.getService<PeriodosServiceClient>('PeriodosService');
   }
 
-  /**
-   * ✅ GET /
-   * Health check (público)
-   */
   @Get()
   getHello() {
     return { message: 'ms-calificaciones activo en puerto 3003' };
   }
 
-  /**
-   * ✅ GET /materias
-   * Listar todas las materias (público)
-   */
   @Get('materias')
   async obtenerMaterias() {
     return await this.materiaRepository.find();
   }
 
-  /**
-   * ✅ POST /materia
-   * Crear nueva materia (admin, docente)
-   */
   @Post('materia')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -122,19 +109,11 @@ export class AppController implements OnModuleInit {
     return await this.materiaRepository.save(this.materiaRepository.create(dto));
   }
 
-  /**
-   * ✅ GET /grupos
-   * Listar grupos (público)
-   */
   @Get('grupos')
   async obtenerGrupos() {
     return await this.grupoRepository.find({ relations: ['materia'] });
   }
 
-  /**
-   * ✅ POST /grupo
-   * Crear nuevo grupo (admin, docente)
-   */
   @Post('grupo')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -159,10 +138,6 @@ export class AppController implements OnModuleInit {
     }));
   }
 
-  /**
-   * ✅ POST /calificar
-   * Registrar calificación (admin, docente)
-   */
   @Post('calificar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -170,11 +145,11 @@ export class AppController implements OnModuleInit {
     @Body() dto: CreateCalificacionDto,
   ) {
     const calificacionExistente = await this.calificacionRepository.findOne({
-      where: { nrc_grupo: dto.nrc_grupo, matricula_alumno: dto.matricula_alumno }
+      where: { nrc_grupo: dto.nrc_grupo, matricula_alumno: dto.matricula_alumno, actividad_id: dto.actividad_id }
     });
     if (calificacionExistente) {
       throw new BadRequestException(
-        `Ya existe una calificación para el alumno ${dto.matricula_alumno} en el grupo ${dto.nrc_grupo}. Use PUT para actualizar.`
+        `Ya existe una calificación para el alumno ${dto.matricula_alumno} en esta actividad. Use PUT para actualizar.`
       );
     }
 
@@ -189,10 +164,6 @@ export class AppController implements OnModuleInit {
           'La materia con ese NRC no existe en el periodo activo',
         );
       }
-
-      console.log(
-        `✅ Validado en MS-2 (Periodos): ${materiaInfo.nombre} (${materiaInfo.creditos} créditos)`,
-      );
     } catch (error) {
       console.error('❌ Error validando materia en MS-2:', (error as Error).message);
       throw new NotFoundException(
@@ -235,14 +206,11 @@ export class AppController implements OnModuleInit {
     return calificacionGuardada;
   }
 
-  /**
-   * ✅ PUT /:nrc/:matricula
-   * Actualizar calificación (admin, docente)
-   */
   @Put(':nrc/:matricula')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
   async actualizarCalificacion(@Param('nrc') nrc: string, @Param('matricula') matricula: string, @Body() dto: UpdateCalificacionDto) {
+    // Si manejas actividades, aquí deberías buscar también por actividad_id si viene en el DTO
     const calificacion = await this.calificacionRepository.findOne({ 
       where: { matricula_alumno: matricula, nrc_grupo: nrc }, 
       relations: ['grupo', 'grupo.materia'] 
@@ -261,10 +229,6 @@ export class AppController implements OnModuleInit {
     return resultado;
   }
 
-  /**
-   * ✅ DELETE /:nrc/:matricula
-   * Eliminar calificación / dar de baja alumno (admin, docente)
-   */
   @Delete(':nrc/:matricula')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -287,10 +251,6 @@ export class AppController implements OnModuleInit {
     return { message: 'Alumno dado de baja exitosamente', matricula_alumno: matricula };
   }
 
-  /**
-   * ✅ GET /kardex/mi-kardex
-   * Ver mi kardex (solo alumno autenticado)
-   */
   @Get('kardex/mi-kardex')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('alumno', 'docente', 'admin')
@@ -357,7 +317,6 @@ export class AppController implements OnModuleInit {
       const userData = await firstValueFrom(
         this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000))
       );
-      console.log('🔐 DATA CRUDA DE AUTH:', JSON.stringify(userData, null, 2));
 
       const nombreAlumno = userData?.name || userData?.nombre || userData?.nombre_usuario || 'Estudiante';
       const emailAlumno = userData?.email || userData?.correo || 'sin-email@buap.mx';
@@ -385,8 +344,6 @@ export class AppController implements OnModuleInit {
         this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000))
       );
       
-      console.log('🛑 DATA CRUDA RECIBIDA DE gRPC:', JSON.stringify(alumnoData, null, 2));
-      
       const userId = alumnoData?.userId || alumnoData?.user_id || alumnoData?.['user_id'];
 
       if (!userId) {
@@ -394,11 +351,9 @@ export class AppController implements OnModuleInit {
         return;
       }
 
-      console.log('🔍 Consultando a Auth con userId:', userId);
       const userData = await firstValueFrom(
         this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000))
       );
-      console.log('🔐 DATA CRUDA DE AUTH:', JSON.stringify(userData, null, 2));
 
       const nombreAlumno = userData?.name || userData?.nombre || userData?.nombre_usuario || 'Estudiante';
       const emailAlumno = userData?.email || userData?.correo || 'sin-email@buap.mx';
@@ -429,10 +384,6 @@ export class AppController implements OnModuleInit {
   // 📊 PONDERACIONES (Examen %, Tarea %, Proyecto %)
   // ==========================================
 
-  /**
-   * ✅ POST /ponderaciones/:materiaId
-   * Crear ponderación (admin, docente)
-   */
   @Post('ponderaciones/:materiaId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -450,10 +401,6 @@ export class AppController implements OnModuleInit {
     );
   }
 
-  /**
-   * ✅ GET /ponderaciones/:materiaId
-   * Obtener ponderación (público)
-   */
   @Get('ponderaciones/:materiaId')
   async obtenerPonderacion(@Param('materiaId') materiaId: string) {
     const ponderacion = await this.ponderacionRepository.findOne({ where: { materia_clave: materiaId } });
@@ -467,10 +414,6 @@ export class AppController implements OnModuleInit {
     return ponderacion;
   }
 
-  /**
-   * ✅ PUT /ponderaciones/:id
-   * Actualizar ponderación (admin, docente)
-   */
   @Put('ponderaciones/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -490,10 +433,6 @@ export class AppController implements OnModuleInit {
   // 📝 ACTIVIDADES (Examen Parcial 1, Tarea 1, etc.)
   // ==========================================
 
-  /**
-   * ✅ POST /actividades/:nrc
-   * Crear actividad (admin, docente)
-   */
   @Post('actividades/:nrc')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -516,10 +455,6 @@ export class AppController implements OnModuleInit {
     );
   }
 
-  /**
-   * ✅ GET /actividades/:nrc
-   * Listar actividades de un grupo (público)
-   */
   @Get('actividades/:nrc')
   async obtenerActividades(@Param('nrc') nrc: string) {
     return await this.actividadRepository.find({ 
@@ -528,10 +463,6 @@ export class AppController implements OnModuleInit {
     });
   }
 
-  /**
-   * ✅ PUT /actividades/:id
-   * Actualizar actividad (admin, docente)
-   */
   @Put('actividades/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -543,10 +474,6 @@ export class AppController implements OnModuleInit {
     return await this.actividadRepository.save(actividad);
   }
 
-  /**
-   * ✅ DELETE /actividades/:id
-   * Desactivar actividad (admin, docente)
-   */
   @Delete('actividades/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -563,10 +490,6 @@ export class AppController implements OnModuleInit {
   // 📊 CONCENTRADO DE CALIFICACIONES
   // ==========================================
 
-  /**
-   * ✅ GET /concentrado/:nrc
-   * Obtener reporte de calificaciones ponderadas (docente, admin)
-   */
   @Get('concentrado/:nrc')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -611,14 +534,20 @@ export class AppController implements OnModuleInit {
           where: { matricula_alumno: cal.matricula_alumno, nrc_grupo: nrc },
         });
 
-        const examenCal = calificacionesPorTipo.find(c => c.tipo_calificacion === 'examen')?.calificacion_ordinaria || 0;
-        const tareaCal = calificacionesPorTipo.find(c => c.tipo_calificacion === 'tarea')?.calificacion_ordinaria || 0;
-        const proyectoCal = calificacionesPorTipo.find(c => c.tipo_calificacion === 'proyecto')?.calificacion_ordinaria || 0;
+        // 🔥 1. Separar por categorías
+        const examenes = calificacionesPorTipo.filter(c => c.tipo_calificacion === 'examen');
+        const tareas = calificacionesPorTipo.filter(c => c.tipo_calificacion === 'tarea');
+        const proyectos = calificacionesPorTipo.filter(c => c.tipo_calificacion === 'proyecto');
 
-        // 🔥 Convertir a números reales (protobuf rechaza strings para campos double)
-        const examenNum = Number(examenCal) || 0;
-        const tareaNum = Number(tareaCal) || 0;
-        const proyectoNum = Number(proyectoCal) || 0;
+        // 🔥 2. Función auxiliar para promediar (Si no hay, da 0)
+        const promediar = (arr: Calificacion[]) => arr.length > 0 
+          ? arr.reduce((sum, c) => sum + Number(c.calificacion_ordinaria), 0) / arr.length 
+          : 0;
+
+        // 🔥 3. Sacar el promedio real de cada categoría
+        const examenNum = promediar(examenes);
+        const tareaNum = promediar(tareas);
+        const proyectoNum = promediar(proyectos);
 
         const promedioPonderado = (examenNum * Number(ponderacion.examen_porcentaje) / 100) +
                                   (tareaNum * Number(ponderacion.tarea_porcentaje) / 100) +
@@ -627,9 +556,9 @@ export class AppController implements OnModuleInit {
         return {
           matricula: cal.matricula_alumno,
           nombre_estudiante: nombreEstudiante,
-          calificacion_examen: examenNum,
-          calificacion_tarea: tareaNum,
-          calificacion_proyecto: proyectoNum,
+          calificacion_examen: Number(examenNum.toFixed(2)),
+          calificacion_tarea: Number(tareaNum.toFixed(2)),
+          calificacion_proyecto: Number(proyectoNum.toFixed(2)),
           promedio_ponderado: Number((Math.round(promedioPonderado * 100) / 100).toFixed(2)),
           estatus: promedioPonderado >= 6 ? 'Aprobado' : 'Reprobado',
         };
@@ -655,7 +584,7 @@ export class AppController implements OnModuleInit {
         proyecto: Number(ponderacion.proyecto_porcentaje) || 0,
       },
     };
-  } // 🔥 Cierre correcto del método obtenerConcentrado
+  }
 
   // ==========================================
   // 📡 MÉTODOS GRPC (Para comunicarse con ms-reportes)
@@ -666,9 +595,6 @@ export class AppController implements OnModuleInit {
     
     const resultado = await this.obtenerConcentrado(data.nrc);
     
-    console.log('🔍 ANTES DE SERIALIZAR gRPC:', JSON.stringify(resultado, null, 2));
-    
-    // 🔥 Map explícito para asegurar que todos los campos se serializan correctamente
     const respuestaFormato = {
       nrc_grupo: String(resultado.nrc_grupo),
       materia: {
@@ -693,8 +619,6 @@ export class AppController implements OnModuleInit {
       },
     };
     
-    console.log('🔍 DESPUÉS DE MAPEAR:', JSON.stringify(respuestaFormato, null, 2));
-    
     return respuestaFormato;
   }
-} // Cierre correcto de la clase AppController
+}

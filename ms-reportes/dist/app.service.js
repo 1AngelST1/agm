@@ -65,23 +65,20 @@ let AppService = class AppService {
         try {
             console.log(`📊 Solicitando datos a Calificaciones para NRC: ${nrc}...`);
             const concentradoData = await (0, rxjs_1.lastValueFrom)(this.calificacionesService.getConcentrado({ nrc }));
-            console.log('📦 CONCENTRADO DATA RECIBIDO:', JSON.stringify(concentradoData, null, 2));
-            console.log('📦 Keys en concentradoData:', Object.keys(concentradoData || {}));
-            console.log('📦 calificaciones:', concentradoData?.calificaciones);
-            console.log('📦 numero de calificaciones:', concentradoData?.calificaciones?.length);
             if (!concentradoData || !concentradoData.calificaciones) {
-                throw new Error(`No se encontraron datos para este grupo. Datos: ${JSON.stringify(concentradoData)}`);
+                throw new Error('No se encontraron datos para este grupo');
             }
             console.log('✅ Datos recibidos, dibujando Excel...');
             const workbook = new ExcelJS.Workbook();
             workbook.creator = 'Sistema AGM BUAP';
             const worksheet = workbook.addWorksheet(`Acta - ${nrc}`);
+            const pond = concentradoData.ponderaciones;
             worksheet.columns = [
                 { header: 'Matrícula', key: 'matricula', width: 15 },
                 { header: 'Nombre del Alumno', key: 'nombre', width: 40 },
-                { header: 'Examen', key: 'examen', width: 12 },
-                { header: 'Tareas', key: 'tarea', width: 12 },
-                { header: 'Proyecto', key: 'proyecto', width: 12 },
+                { header: `Examen (${pond.examen || 40}%)`, key: 'examen', width: 15 },
+                { header: `Tareas (${pond.tarea || 30}%)`, key: 'tarea', width: 15 },
+                { header: `Proyecto (${pond.proyecto || 30}%)`, key: 'proyecto', width: 15 },
                 { header: 'Prom. Final', key: 'promedio', width: 15 },
                 { header: 'Estatus', key: 'estatus', width: 15 },
             ];
@@ -96,11 +93,11 @@ let AppService = class AppService {
             alumnos.forEach((alumno) => {
                 worksheet.addRow({
                     matricula: alumno.matricula,
-                    nombre: alumno.nombreEstudiante || alumno.nombre_estudiante,
-                    examen: alumno.calificacionExamen || alumno.calificacion_examen,
-                    tarea: alumno.calificacionTarea || alumno.calificacion_tarea,
-                    proyecto: alumno.calificacionProyecto || alumno.calificacion_proyecto,
-                    promedio: alumno.promedioPonderado || alumno.promedio_ponderado,
+                    nombre: alumno.nombre_estudiante,
+                    examen: alumno.calificacion_examen,
+                    tarea: alumno.calificacion_tarea,
+                    proyecto: alumno.calificacion_proyecto,
+                    promedio: alumno.promedio_ponderado,
                     estatus: alumno.estatus,
                 });
             });
