@@ -18,6 +18,7 @@ message NotificacionRequest {
   string nombre_profesor = 6;
   string email_destino = 7;
   string materia = 8;
+  string nombre_actividad = 9;  // Nombre de la actividad (para notificaciones de actualización/baja)
 }
 
 message ActualizacionRequest {
@@ -32,6 +33,7 @@ message ActualizacionRequest {
   string materia = 9;
   string nombre_alumno = 10;
   string tipo_calificacion = 11;  // 'examen', 'tarea', 'proyecto', 'final'
+  string nombre_actividad = 12;  // Nombre de la actividad (e.g., "Examen Parcial 1")
 }
 
 message NotificacionResponse {

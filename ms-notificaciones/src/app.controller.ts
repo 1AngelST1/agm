@@ -43,6 +43,8 @@ interface NotificacionRequest {
   calificacionAnterior?: number;
   tipo_calificacion?: string;
   tipoCalificacion?: string;
+  nombre_actividad?: string;
+  nombreActividad?: string;
 }
 
 @Controller('notificaciones')
@@ -151,14 +153,14 @@ export class AppController implements OnModuleInit {
     const nombreAlumno = data.nombre_alumno || data.nombreAlumno || 'Estudiante';
     const materia = data.nombre_materia || data.nombreMateria || data.materia_id || data.materiaId || 'Materia';
     const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
+    const nombreActividad = data.nombre_actividad || data.nombreActividad || data.tipo_calificacion || data.tipoCalificacion || 'Calificación';
 
-    console.log('✅ VALORES PROCESADOS (Baja):', { nombreAlumno, materia, email });
+    console.log('✅ VALORES PROCESADOS (Baja):', { nombreAlumno, materia, nombreActividad, email });
 
     try {
       const subject = `Notificación de Baja Oficial: ${materia}`;
       
-      // 🔥 TEXTO CORREGIDO: Más directo, como baja definitiva
-      const body = `Hola ${nombreAlumno},<br><br>Te informamos que se ha procesado correctamente tu baja definitiva de la materia <strong>${materia}</strong>.<br><br>Si esto fue un error o tienes alguna duda, contacta inmediatamente con la administración académica.`;
+      const body = `Hola ${nombreAlumno},<br><br>Te informamos que se ha procesado correctamente tu baja definitiva de la calificación <strong>${nombreActividad}</strong> en la materia <strong>${materia}</strong>.<br><br>Si esto fue un error o tienes alguna duda, contacta inmediatamente con la administración académica.`;
       
       console.log('📧 ENVIANDO EMAIL (Baja):', { subject, to: email });
       
@@ -181,16 +183,16 @@ export class AppController implements OnModuleInit {
     const notaNueva = data.calificacionNueva ?? data.calificacion_nueva ?? data.nuevaNota ?? data.nueva_nota ?? 0;
     
     const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
-    const tipoCalificacion = data.tipo_calificacion || data.tipoCalificacion || 'ordinaria';
+    const nombreActividad = data.nombre_actividad || data.nombreActividad || data.tipo_calificacion || data.tipoCalificacion || 'Calificación';
 
-    console.log('✅ VALORES PROCESADOS (Actualización):', { nombreAlumno, materia, tipoCalificacion, notaAnterior, notaNueva, email });
+    console.log('✅ VALORES PROCESADOS (Actualización):', { nombreAlumno, materia, nombreActividad, notaAnterior, notaNueva, email });
 
     try {
       const mensaje = notaAnterior > 0 
-        ? `Tu nota de <strong>${tipoCalificacion.toUpperCase()}</strong> en <strong>${materia}</strong> ha sido actualizada. <br> Nota anterior: <strong>${notaAnterior}</strong> <br> Nueva nota: <strong>${notaNueva}</strong>`
-        : `Tu calificación de <strong>${tipoCalificacion.toUpperCase()}</strong> en <strong>${materia}</strong> ha sido registrada: <strong>${notaNueva}</strong>`;
+        ? `Tu nota de <strong>${nombreActividad}</strong> en <strong>${materia}</strong> ha sido actualizada. <br> Nota anterior: <strong>${notaAnterior}</strong> <br> Nueva nota: <strong>${notaNueva}</strong>`
+        : `Tu calificación de <strong>${nombreActividad}</strong> en <strong>${materia}</strong> ha sido registrada: <strong>${notaNueva}</strong>`;
 
-      const subject = `Actualización de Calificación en ${materia} (${tipoCalificacion.toUpperCase()})`;
+      const subject = `Actualización de Calificación en ${materia} (${nombreActividad})`;
       
       console.log('📧 ENVIANDO EMAIL (Actualización):', { subject, to: email });
 

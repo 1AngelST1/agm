@@ -144,6 +144,9 @@ export class AppController implements OnModuleInit {
   async calificarAlumno(
     @Body() dto: CreateCalificacionDto,
   ) {
+    console.log('\n=== CREAR CALIFICACIÓN ===');
+    console.log('📋 DTO RECIBIDO:', JSON.stringify(dto, null, 2));
+    
     const calificacionExistente = await this.calificacionRepository.findOne({
       where: { nrc_grupo: dto.nrc_grupo, matricula_alumno: dto.matricula_alumno, actividad_id: dto.actividad_id }
     });
@@ -201,7 +204,25 @@ export class AppController implements OnModuleInit {
       }),
     );
 
-    await this.enviarNotificacionRegistro(dto.matricula_alumno, calificacionGuardada, dto.nrc_grupo, dto.tipo_calificacion || 'ordinaria');
+    // Recargar desde BD para asegurar que tiene todos los campos
+    const calificacionCompleta = await this.calificacionRepository.findOne({
+      where: { 
+        matricula_alumno: calificacionGuardada.matricula_alumno,
+        nrc_grupo: calificacionGuardada.nrc_grupo
+      }
+    });
+
+    console.log('\n✅ CALIFICACIÓN GUARDADA Y RECARGADA:');
+    console.log(JSON.stringify({
+      matricula_alumno: calificacionCompleta?.matricula_alumno,
+      nrc_grupo: calificacionCompleta?.nrc_grupo,
+      calificacion_ordinaria: calificacionCompleta?.calificacion_ordinaria,
+      tipo_calificacion: calificacionCompleta?.tipo_calificacion,
+      actividad_id: calificacionCompleta?.actividad_id,
+      estatus: calificacionCompleta?.estatus,
+    }, null, 2));
+
+    await this.enviarNotificacionRegistro(dto.matricula_alumno, calificacionCompleta || calificacionGuardada, dto.nrc_grupo);
 
     return calificacionGuardada;
   }
@@ -224,7 +245,7 @@ export class AppController implements OnModuleInit {
     calificacion.estatus = dto.calificacion_ordinaria >= 6 ? 'Aprobado' : 'Reprobado';
     const resultado = await this.calificacionRepository.save(calificacion);
 
-    await this.enviarNotificacionActualizacion(matricula, notaAnterior, dto.calificacion_ordinaria, nrc, calificacion.tipo_calificacion || 'ordinaria');
+    await this.enviarNotificacionActualizacion(matricula, notaAnterior, dto.calificacion_ordinaria, nrc, calificacion);
 
     return resultado;
   }
@@ -246,7 +267,7 @@ export class AppController implements OnModuleInit {
     
     await this.calificacionRepository.remove(calificacion);
 
-    await this.enviarNotificacionBaja(matricula, matNombre, calificacion.tipo_calificacion || 'ordinaria');
+    await this.enviarNotificacionBaja(matricula, matNombre, calificacion);
 
     return { message: 'Alumno dado de baja exitosamente', matricula_alumno: matricula };
   }
@@ -263,7 +284,7 @@ export class AppController implements OnModuleInit {
   // ✉️ MÉTODOS PRIVADOS PARA NOTIFICACIONES
   // ==========================================
 
-  private async enviarNotificacionActualizacion(matricula: string, notaAnterior: number, nuevaNota: number, nrc: string, tipo_calificacion: string) {
+  private async enviarNotificacionActualizacion(matricula: string, notaAnterior: number, nuevaNota: number, nrc: string, calificacion: Calificacion) {
     try {
       const alumnoData = await firstValueFrom(this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000)));
       const userId = alumnoData?.userId || alumnoData?.user_id || alumnoData?.['user_id'];
@@ -277,6 +298,24 @@ export class AppController implements OnModuleInit {
       const materiaData = await firstValueFrom(this.periodosService.GetMateriaById({ nrc }).pipe(timeout(3000)));
       const nombreMateria = materiaData?.nombre || materiaData?.nombre_materia || 'Materia';
 
+      // OBTENER NOMBRE DE ACTIVIDAD
+      let nombreActividad = 'Calificación';
+      
+      if (calificacion.tipo_calificacion) {
+        const resultado = await this.actividadRepository
+          .createQueryBuilder('act')
+          .where('act.nrc_grupo = :nrc', { nrc })
+          .andWhere('act.tipo = :tipo', { tipo: calificacion.tipo_calificacion })
+          .orderBy('act.created_at', 'DESC')
+          .getMany();
+          
+        if (resultado.length > 0) {
+          nombreActividad = resultado[0].nombre;
+        } else {
+          nombreActividad = calificacion.tipo_calificacion;
+        }
+      }
+
       await firstValueFrom(
         this.notificacionesService.SendActualizacion({
           matricula: matricula,
@@ -289,8 +328,8 @@ export class AppController implements OnModuleInit {
           calificacion_nueva: Number(nuevaNota),
           nuevaNota: Number(nuevaNota),
           nueva_nota: Number(nuevaNota),
-          tipoCalificacion: tipo_calificacion,
-          tipo_calificacion: tipo_calificacion
+          nombreActividad: nombreActividad,
+          nombre_actividad: nombreActividad
         } as any).pipe(timeout(3000))
       );
       console.log(`✅ Notificación de actualización enviada a ${emailAlumno} de ${notaAnterior} a ${nuevaNota}`);
@@ -299,7 +338,7 @@ export class AppController implements OnModuleInit {
     }
   }
 
-  private async enviarNotificacionBaja(matricula: string, matNombre: string, tipo_calificacion: string) {
+  private async enviarNotificacionBaja(matricula: string, matNombre: string, calificacion: Calificacion) {
     try {
       console.log('ENVIANDO A ALUMNOS (Baja) - matricula:', matricula);
       const alumnoData = await firstValueFrom(
@@ -313,7 +352,6 @@ export class AppController implements OnModuleInit {
         return;
       }
 
-      console.log('🔍 Consultando a Auth con userId:', userId);
       const userData = await firstValueFrom(
         this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000))
       );
@@ -321,13 +359,33 @@ export class AppController implements OnModuleInit {
       const nombreAlumno = userData?.name || userData?.nombre || userData?.nombre_usuario || 'Estudiante';
       const emailAlumno = userData?.email || userData?.correo || 'sin-email@buap.mx';
 
+      // OBTENER NOMBRE DE ACTIVIDAD
+      let nombreActividad = 'Calificación';
+      const nrc = calificacion.nrc_grupo;
+      
+      if (calificacion.tipo_calificacion) {
+        const resultado = await this.actividadRepository
+          .createQueryBuilder('act')
+          .where('act.nrc_grupo = :nrc', { nrc })
+          .andWhere('act.tipo = :tipo', { tipo: calificacion.tipo_calificacion })
+          .orderBy('act.created_at', 'DESC')
+          .getMany();
+          
+        if (resultado.length > 0) {
+          nombreActividad = resultado[0].nombre;
+        } else {
+          nombreActividad = calificacion.tipo_calificacion;
+        }
+      }
+
       await firstValueFrom(
         this.notificacionesService.SendBajaNotif({
           matricula: matricula,
           nombreAlumno: nombreAlumno,
           nombreMateria: matNombre,
           emailDestino: emailAlumno,
-          tipoCalificacion: tipo_calificacion 
+          nombreActividad: nombreActividad,
+          nombre_actividad: nombreActividad
         }).pipe(timeout(3000))
       );
       console.log(`✅ Notificación de baja enviada a ${emailAlumno}`);
@@ -336,10 +394,16 @@ export class AppController implements OnModuleInit {
     }
   }
 
-  private async enviarNotificacionRegistro(matricula: string, calificacion: Calificacion, nrc: string, tipo_calificacion: string) {
+  private async enviarNotificacionRegistro(matricula: string, calificacion: Calificacion, nrc: string) {
     try {
-      console.log('ENVIANDO A ALUMNOS (Registro) - matricula:', matricula);
-      
+      console.log('\n=== NOTIFICACIÓN REGISTRO ===');
+      console.log('📋 Calificación en memoria:', {
+        matricula_alumno: calificacion.matricula_alumno,
+        nrc_grupo: calificacion.nrc_grupo,
+        tipo_calificacion: calificacion.tipo_calificacion,
+        actividad_id: calificacion.actividad_id,
+      });
+
       const alumnoData = await firstValueFrom(
         this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000))
       );
@@ -363,6 +427,40 @@ export class AppController implements OnModuleInit {
       );
       const nombreMateria = materiaData?.nombre || materiaData?.nombre_materia || 'Materia';
 
+      // OBTENER NOMBRE DE ACTIVIDAD
+      let nombreActividad = 'Calificación';
+      
+      console.log(`\n🔍 BUSCANDO ACTIVIDAD...`);
+      console.log(`   📌 nrc_grupo del request: ${nrc}`);
+      console.log(`   📌 tipo_calificacion: ${calificacion.tipo_calificacion}`);
+      console.log(`   📌 actividad_id: ${calificacion.actividad_id}`);
+      
+      // Si hay tipo, buscar actividades  de ese tipo
+      if (calificacion.tipo_calificacion) {
+        console.log(`\n🔎 Buscando CON queryBuilder...`);
+        const resultado = await this.actividadRepository
+          .createQueryBuilder('act')
+          .where('act.nrc_grupo = :nrc', { nrc })
+          .andWhere('act.tipo = :tipo', { tipo: calificacion.tipo_calificacion })
+          .orderBy('act.created_at', 'DESC')
+          .getMany();
+          
+        console.log(`   📊 Resultado queryBuilder: ${resultado.length} actividades encontradas`);
+        
+        if (resultado.length > 0) {
+          resultado.forEach((act, idx) => {
+            console.log(`      ${idx + 1}. "${act.nombre}" (tipo: ${act.tipo}, nrc: ${act.nrc_grupo})`);
+          });
+          nombreActividad = resultado[0].nombre;
+          console.log(`   ✅ USAMOS: "${nombreActividad}"`);
+        } else {
+          console.log(`   ❌ No encontradas. Usando tipo como fallback.`);
+          nombreActividad = calificacion.tipo_calificacion;
+        }
+      }
+
+      console.log(`\n✨ NOMBRE FINAL ENVIADO: "${nombreActividad}"\n`);
+
       await firstValueFrom(
         this.notificacionesService.SendActualizacion({
           matricula: matricula,
@@ -370,13 +468,15 @@ export class AppController implements OnModuleInit {
           nombreMateria: nombreMateria,
           emailDestino: emailAlumno,
           calificacionAnterior: 0, 
-          calificacionNueva: calificacion.calificacion_ordinaria, 
-          tipoCalificacion: tipo_calificacion 
+          calificacionNueva: calificacion.calificacion_ordinaria,
+          nombreActividad: nombreActividad,
+          nombre_actividad: nombreActividad
         }).pipe(timeout(3000))
       );
       console.log(`✅ Notificación de registro enviada a ${emailAlumno}`);
     } catch (error) {
-      console.error('❌ Error silencioso en notificación de registro:', (error as Error).message);
+      console.error('❌ Error en notificación de registro:', (error as Error).message);
+      console.error(error);
     }
   }
 
