@@ -1,5 +1,9 @@
 /**
  * 📨 RabbitMQ Listener - Consumidor de eventos para ms-notificaciones
+<<<<<<< HEAD
+=======
+ * Part 9: Incluye Dead Letter Queue (DLQ) listener para manejo de errores
+>>>>>>> dev2
  */
 
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
@@ -7,6 +11,17 @@ import * as amqp from 'amqplib';
 import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import { AlumnoInscritoEvent, CalificacionFinalAsignadaEvent, AsistenciaResumenCalculadoEvent, InscripcionRechazadaEvent, MateriaCargaLlenaEvent } from '@shared/events.types';
 
+<<<<<<< HEAD
+=======
+interface DLQMessage {
+  originalRoutingKey: string;
+  payload: any;
+  failureReason: string;
+  failedAt: string;
+  retriesExhausted: boolean;
+}
+
+>>>>>>> dev2
 @Injectable()
 export class RabbitMQListener implements OnModuleInit {
   private logger = new Logger('RabbitMQListener');
@@ -111,6 +126,12 @@ export class RabbitMQListener implements OnModuleInit {
       });
 
       this.logger.log(`✅ Escuchando en queue: ${RABBITMQ_QUEUES.NOTIFICACIONES}`);
+<<<<<<< HEAD
+=======
+
+      // Part 9: Configurar Dead Letter Queue listener
+      await this.setupDLQListener();
+>>>>>>> dev2
     } catch (error) {
       this.logger.error('❌ Error configurando listeners:', error);
       throw error;
@@ -237,4 +258,81 @@ export class RabbitMQListener implements OnModuleInit {
       this.logger.error('❌ Error procesando materia.carga.llena:', error);
     }
   }
+<<<<<<< HEAD
+=======
+
+  /**
+   * 💀 Part 9: Configurar Dead Letter Queue listener
+   * Escucha mensajes que fallaron después de reintentos
+   */
+  private async setupDLQListener() {
+    if (!this.channel) return;
+
+    try {
+      // Crear DLQ si no existe
+      await this.channel!.assertQueue(RABBITMQ_QUEUES.DEAD_LETTER, {
+        durable: true,
+      });
+
+      // Consumir mensajes del DLQ
+      await this.channel!.consume(RABBITMQ_QUEUES.DEAD_LETTER, async (msg) => {
+        if (msg) {
+          try {
+            const content: DLQMessage = JSON.parse(msg.content.toString());
+            await this.onDeadLetterReceived(content);
+            this.channel!.ack(msg);
+          } catch (error) {
+            this.logger.error('❌ Error procesando DLQ:', error);
+            this.channel!.nack(msg, false, true);
+          }
+        }
+      });
+
+      this.logger.log(`✅ DLQ listener configurado: ${RABBITMQ_QUEUES.DEAD_LETTER}`);
+    } catch (error) {
+      this.logger.error('❌ Error configurando DLQ listener:', error);
+    }
+  }
+
+  /**
+   * 💀 Part 9: Consumidor: Mensaje llegó a Dead Letter Queue
+   * Estos son mensajes que fallaron tras múltiples reintentos
+   */
+  private async onDeadLetterReceived(dlqMessage: DLQMessage) {
+    try {
+      this.logger.error(
+        `💀 DEAD LETTER RECIBIDO: ${dlqMessage.originalRoutingKey}`,
+        {
+          failureReason: dlqMessage.failureReason,
+          failedAt: dlqMessage.failedAt,
+          retriesExhausted: dlqMessage.retriesExhausted,
+        }
+      );
+
+      // Part 9: Opciones de recuperación:
+      // 1. Registrar en base de datos para auditoría
+      // 2. Alertar a administrador
+      // 3. Intentar procesar con lógica alternativa
+      // 4. Guardar para reprocessing manual
+
+      // Aquí se podría:
+      // - Enviar alert email a administrador
+      // - Guardar en tabla de errores para análisis
+      // - Llamar a servicio de recuperación
+      // - Intentar procesar con fallback
+
+      this.logger.warn(
+        `⚠️ Evento enviado a DLQ para recuperación manual. ` +
+        `Routing Key: ${dlqMessage.originalRoutingKey}`
+      );
+
+      // Ejemplo: Log detallado del payload para debugging
+      this.logger.debug(
+        `📋 DLQ Payload: ${JSON.stringify(dlqMessage.payload, null, 2)}`
+      );
+    } catch (error) {
+      this.logger.error('❌ Error manejando Dead Letter:', error);
+    }
+  }
+>>>>>>> dev2
 }
