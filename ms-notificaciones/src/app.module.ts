@@ -3,9 +3,12 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { RabbitMQModule } from './rabbitmq.module';
+import { RabbitMQListener } from './rabbitmq.listener';
 
 @Module({
   imports: [
+    RabbitMQModule,
     // 🔐 Cliente gRPC para conectar a MS-Auth
     ClientsModule.register([
       {
@@ -20,6 +23,6 @@ import { AppService } from './app.service';
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RabbitMQListener],
 })
 export class AppModule {}

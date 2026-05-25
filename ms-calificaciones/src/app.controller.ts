@@ -19,7 +19,9 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { firstValueFrom, Observable, timeout } from 'rxjs';
-import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent } from '@shared/events.types';
+import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent, CalificacionFinalAsignadaEvent } from '@shared/events.types';
+import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
+import { RabbitMQService } from './rabbitmq.service';
 
 import { Materia } from './materia.entity';
 import { Grupo } from './grupo.entity';
@@ -83,6 +85,7 @@ export class AppController implements OnModuleInit {
     @Inject('ALUMNOS_SERVICE') private alumnosClient: ClientGrpc,
     @Inject('NOTIFICACIONES_SERVICE') private notificacionesClient: ClientGrpc,
     @Inject('PERIODOS_SERVICE') private periodosClient: ClientGrpc,
+    private rabbitmqService: RabbitMQService,
   ) {}
 
   onModuleInit() {
@@ -288,6 +291,57 @@ export class AppController implements OnModuleInit {
     await this.enviarNotificacionBaja(matricula, matNombre, calificacion.tipo_calificacion || 'ordinaria');
 
     return { message: 'Alumno dado de baja exitosamente', matricula_alumno: matricula };
+  }
+
+  /**
+   * ✅ POST /asignar-final
+   * Asignar calificación final y publicar evento
+   */
+  @Post('asignar-final')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'docente')
+  async asignarCalificacionFinal(
+    @Body() body: { matricula: string; nrc_materia: string; calificacion_final: number; derecho_proyecto: boolean }
+  ) {
+    const calificacion = await this.calificacionRepository.findOne({
+      where: { matricula_alumno: body.matricula, nrc_grupo: body.nrc_materia },
+      relations: ['grupo', 'grupo.materia'],
+    });
+
+    if (!calificacion) throw new NotFoundException('Calificación no encontrada');
+
+    // Actualizar calificación final
+    calificacion.calificacion_final = body.calificacion_final;
+    calificacion.estatus = body.calificacion_final >= 6 ? 'Aprobado' : 'Reprobado';
+
+    await this.calificacionRepository.save(calificacion);
+
+    // 📤 Publicar evento calificacion.final.asignada
+    const evento: CalificacionFinalAsignadaEvent = {
+      alumno_id: body.matricula,
+      matricula: body.matricula,
+      nrc_materia: body.nrc_materia,
+      calificacion_final: body.calificacion_final,
+      derecho_proyecto: body.derecho_proyecto,
+      estatus: calificacion.estatus,
+    };
+
+    await this.rabbitmqService.publishEvent(
+      RABBITMQ_ROUTING_KEYS.CALIFICACION_FINAL_ASIGNADA,
+      evento,
+    );
+
+    this.logger.log(
+      `📤 Evento calificacion.final.asignada publicado para ${body.matricula}`
+    );
+
+    return {
+      mensaje: 'Calificación final asignada exitosamente',
+      matricula: body.matricula,
+      nrc_materia: body.nrc_materia,
+      calificacion_final: body.calificacion_final,
+      estatus: calificacion.estatus,
+    };
   }
 
   /**

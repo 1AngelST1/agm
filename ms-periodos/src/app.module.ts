@@ -6,9 +6,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Periodo } from './periodo.entity';
 import { Materia } from './materia.entity';
+import { RabbitMQModule } from './rabbitmq.module';
+import { RabbitMQListener } from './rabbitmq.listener';
 
 @Module({
   imports: [
+    RabbitMQModule,
     // 🗄️ Base de datos
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -37,6 +40,6 @@ import { Materia } from './materia.entity';
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RabbitMQListener],
 })
 export class AppModule {}
