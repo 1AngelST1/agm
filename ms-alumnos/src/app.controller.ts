@@ -29,7 +29,7 @@ import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RabbitMQService } from './rabbitmq.service';
-import { AlumnoInscritoEvent, AlumnoDesinscrutoEvent } from '@shared/events.types';
+import { AlumnoInscritoEvent, AlumnoDesinscrutoEvent, InscripcionRechazadaEvent } from '@shared/events.types';
 import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import * as crypto from 'crypto';
 
@@ -215,9 +215,56 @@ export class AppController implements OnModuleInit {
     });
 
     if (yaInscrito) {
+      // 📤 Publicar evento de rechazo
+      const eventoRechazo: InscripcionRechazadaEvent = {
+        alumno_id: body.matricula_alumno,
+        matricula: body.matricula_alumno,
+        nrc_materia: body.nrc_materia,
+        motivo: 'ya_inscrito',
+        detalle: 'El alumno ya se encuentra inscrito en esta materia',
+        fecha_rechazo: new Date(),
+      };
+
+      await this.rabbitmqService.publishEvent(
+        RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA,
+        eventoRechazo,
+      );
+
       return { 
-        message: 'El alumno ya se encuentra inscrito activamente en esta asignatura.', 
+        mensaje: 'El alumno ya se encuentra inscrito activamente en esta asignatura.', 
         inscripcion: yaInscrito 
+      };
+    }
+
+    // ⚠️ Validar carga máxima de créditos (máximo 18)
+    const inscripcionesActivas = await this.inscripcionRepository.find({
+      where: { matricula_alumno: body.matricula_alumno, estatus: 'activo' },
+      relations: ['nrc_materia'],
+    });
+
+    const creditosActuales = inscripcionesActivas.length * 6; // Asumiendo 6 créditos por materia
+    const MAX_CREDITOS = 18;
+
+    if (creditosActuales + 6 > MAX_CREDITOS) {
+      // 📤 Publicar evento de rechazo
+      const eventoRechazo: InscripcionRechazadaEvent = {
+        alumno_id: body.matricula_alumno,
+        matricula: body.matricula_alumno,
+        nrc_materia: body.nrc_materia,
+        motivo: 'carga_excedida',
+        detalle: `Carga actual: ${creditosActuales} créditos. Máximo permitido: ${MAX_CREDITOS} créditos.`,
+        fecha_rechazo: new Date(),
+      };
+
+      await this.rabbitmqService.publishEvent(
+        RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA,
+        eventoRechazo,
+      );
+
+      return { 
+        mensaje: `No puede inscribirse: Superaría la carga máxima de ${MAX_CREDITOS} créditos. Actualmente tiene ${creditosActuales} créditos.`,
+        creditos_actuales: creditosActuales,
+        max_creditos: MAX_CREDITOS,
       };
     }
 

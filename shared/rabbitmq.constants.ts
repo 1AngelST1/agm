@@ -71,6 +71,10 @@ export const RABBITMQ_ROUTING_KEYS = {
   // REPORTES
   REPORTE_GENERADO: 'reporte.generado',
   REPORTE_FALLA: 'reporte.falla',
+
+  // VALIDACIONES / ERRORES
+  INSCRIPCION_RECHAZADA: 'inscripcion.rechazada',
+  MATERIA_CARGA_LLENA: 'materia.carga.llena',
 } as const;
 
 // ============================================

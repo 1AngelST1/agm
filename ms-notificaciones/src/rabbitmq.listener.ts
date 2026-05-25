@@ -5,7 +5,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
-import { AlumnoInscritoEvent, CalificacionFinalAsignadaEvent, AsistenciaResumenCalculadoEvent } from '@shared/events.types';
+import { AlumnoInscritoEvent, CalificacionFinalAsignadaEvent, AsistenciaResumenCalculadoEvent, InscripcionRechazadaEvent, MateriaCargaLlenaEvent } from '@shared/events.types';
 
 @Injectable()
 export class RabbitMQListener implements OnModuleInit {
@@ -69,6 +69,18 @@ export class RabbitMQListener implements OnModuleInit {
         RABBITMQ_ROUTING_KEYS.ASISTENCIA_RESUMEN_CALCULADO
       );
 
+      await this.channel!.bindQueue(
+        RABBITMQ_QUEUES.NOTIFICACIONES,
+        RABBITMQ_EXCHANGE,
+        RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA
+      );
+
+      await this.channel!.bindQueue(
+        RABBITMQ_QUEUES.NOTIFICACIONES,
+        RABBITMQ_EXCHANGE,
+        RABBITMQ_ROUTING_KEYS.MATERIA_CARGA_LLENA
+      );
+
       // Consumir mensajes
       await this.channel!.consume(RABBITMQ_QUEUES.NOTIFICACIONES, async (msg) => {
         if (msg) {
@@ -84,6 +96,10 @@ export class RabbitMQListener implements OnModuleInit {
               await this.onCalificacionFinalAsignada(content as CalificacionFinalAsignadaEvent);
             } else if (routingKey === RABBITMQ_ROUTING_KEYS.ASISTENCIA_RESUMEN_CALCULADO) {
               await this.onAsistenciaResumenCalculado(content as AsistenciaResumenCalculadoEvent);
+            } else if (routingKey === RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA) {
+              await this.onInscripcionRechazada(content as InscripcionRechazadaEvent);
+            } else if (routingKey === RABBITMQ_ROUTING_KEYS.MATERIA_CARGA_LLENA) {
+              await this.onMateriaCargaLlena(content as MateriaCargaLlenaEvent);
             }
 
             this.channel!.ack(msg);
@@ -169,6 +185,56 @@ export class RabbitMQListener implements OnModuleInit {
       }
     } catch (error) {
       this.logger.error('❌ Error procesando asistencia.resumen.calculado:', error);
+    }
+  }
+
+  /**
+   * 📨 Consumidor: Se rechazó inscripción de alumno
+   */
+  private async onInscripcionRechazada(event: InscripcionRechazadaEvent) {
+    try {
+      this.logger.warn(
+        `📧 Notificación: Inscripción rechazada para ${event.matricula} - Motivo: ${event.motivo}`
+      );
+
+      // Aquí se puede:
+      // 1. Enviar email al alumno explicando razón del rechazo
+      // 2. Incluir acciones correctivas (revisar créditos, validar duplicados)
+      // 3. Notificar al coordinador académico
+
+      if (event.motivo === 'ya_inscrito') {
+        this.logger.log(
+          `ℹ️ ${event.matricula} ya estaba inscrito en ${event.nrc_materia}`
+        );
+      } else if (event.motivo === 'carga_excedida') {
+        this.logger.warn(
+          `⚠️ ${event.matricula} superó carga máxima: ${event.detalle}`
+        );
+      }
+    } catch (error) {
+      this.logger.error('❌ Error procesando inscripcion.rechazada:', error);
+    }
+  }
+
+  /**
+   * 📨 Consumidor: Materia llegó a capacidad máxima
+   */
+  private async onMateriaCargaLlena(event: MateriaCargaLlenaEvent) {
+    try {
+      this.logger.warn(
+        `📧 Notificación: Materia ${event.nrc_materia} alcanzó capacidad máxima`
+      );
+
+      // Aquí se puede:
+      // 1. Notificar a docente que grupo está lleno
+      // 2. Alertar a coordinador para crear grupo adicional
+      // 3. Notificar a estudiantes en cola de espera
+
+      this.logger.log(
+        `📊 Materia ${event.nrc_materia}: ${event.inscritos_actuales}/${event.capacidad_maxima} inscritos`
+      );
+    } catch (error) {
+      this.logger.error('❌ Error procesando materia.carga.llena:', error);
     }
   }
 }

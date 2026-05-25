@@ -208,6 +208,27 @@ export interface ReporteFallaEvent {
 }
 
 // ============================================
+// 8️⃣ EVENTOS DE VALIDACIÓN / ERRORES
+// ============================================
+
+export interface InscripcionRechazadaEvent {
+  alumno_id: string;
+  matricula: string;
+  nrc_materia: string;
+  motivo: 'carga_excedida' | 'grupo_lleno' | 'ya_inscrito' | 'prerequisito' | 'otro';
+  detalle: string;
+  fecha_rechazo: Date;
+}
+
+export interface MateriaCargaLlenaEvent {
+  nrc_materia: string;
+  grupo_id: string;
+  capacidad_maxima: number;
+  inscritos_actuales: number;
+  timestamp: Date;
+}
+
+// ============================================
 // UNION TYPES - Para type checking
 // ============================================
 
@@ -231,4 +252,6 @@ export type AnyEvent =
   | NotificacionEnviadaEvent
   | NotificacionFallidaEvent
   | ReporteGeneradoEvent
-  | ReporteFallaEvent;
+  | ReporteFallaEvent
+  | InscripcionRechazadaEvent
+  | MateriaCargaLlenaEvent;
