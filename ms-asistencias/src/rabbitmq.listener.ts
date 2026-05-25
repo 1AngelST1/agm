@@ -5,7 +5,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
-import { AlumnoInscritoEvent } from '@shared/events.types';
+import { AlumnoInscritoEvent, PeriodoIniciado, PeriodoCerradoEvent } from '@shared/events.types';
 import { AppService } from './app.service';
 
 @Injectable()
@@ -67,6 +67,18 @@ export class RabbitMQListener implements OnModuleInit {
         RABBITMQ_ROUTING_KEYS.ALUMNO_DESINSCRITO
       );
 
+      await this.channel!.bindQueue(
+        RABBITMQ_QUEUES.ASISTENCIAS,
+        RABBITMQ_EXCHANGE,
+        RABBITMQ_ROUTING_KEYS.PERIODO_INICIADO
+      );
+
+      await this.channel!.bindQueue(
+        RABBITMQ_QUEUES.ASISTENCIAS,
+        RABBITMQ_EXCHANGE,
+        RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO
+      );
+
       // Consumir mensajes
       await this.channel!.consume(RABBITMQ_QUEUES.ASISTENCIAS, async (msg) => {
         if (msg) {
@@ -81,6 +93,10 @@ export class RabbitMQListener implements OnModuleInit {
             } else if (routingKey === RABBITMQ_ROUTING_KEYS.ALUMNO_DESINSCRITO) {
               // Aquí se puede manejar la desinscripción
               this.logger.log(`👋 Alumno desinscrito: ${content.matricula}`);
+            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_INICIADO) {
+              this.logger.log(`📅 Período iniciado: ${content.numero_periodo}`);
+            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO) {
+              this.logger.log(`📅 Período cerrado: ${content.numero_periodo}`);
             }
 
             // ACK: Confirmar que procesamos el mensaje

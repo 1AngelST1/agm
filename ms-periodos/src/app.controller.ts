@@ -8,6 +8,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { AppService } from './app.service';
@@ -17,6 +18,9 @@ import { Materia } from './materia.entity';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
+import { RabbitMQService } from './rabbitmq.service';
+import { PeriodoIniciado, PeriodoCerradoEvent } from '@shared/events.types';
+import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 
 // Definimos una interfaz para tipar los datos entrantes de gRPC y evitar el uso de 'any'
 interface GetMateriaRequest {
@@ -25,7 +29,12 @@ interface GetMateriaRequest {
 
 @Controller('periodos')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  private logger = new Logger('PeriodosController');
+
+  constructor(
+    private readonly appService: AppService,
+    private readonly rabbitmqService: RabbitMQService,
+  ) {}
 
   // ==========================================
   // 🌐 ENDPOINTS REST (Para el Administrador)
@@ -162,5 +171,79 @@ export class AppController {
         creditos: 0,
       };
     }
+  }
+
+  /**
+   * ✅ POST /periodos/iniciar/:id
+   * Iniciar un período (publica evento periodo.iniciado)
+   * Solo Administrador
+   */
+  @Post('iniciar/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async iniciarPeriodo(@Param('id') id: string) {
+    const periodo = await this.appService.obtenerPorId(id);
+    
+    if (!periodo) {
+      throw new Error('Período no encontrado');
+    }
+
+    // 📤 Publicar evento periodo.iniciado
+    const evento: PeriodoIniciado = {
+      periodo_id: periodo.id,
+      numero_periodo: periodo.numero_periodo,
+      fecha_inicio: periodo.fecha_inicio,
+      fecha_fin: periodo.fecha_fin,
+    };
+
+    await this.rabbitmqService.publishEvent(
+      RABBITMQ_ROUTING_KEYS.PERIODO_INICIADO,
+      evento,
+    );
+
+    this.logger.log(`📤 Evento periodo.iniciado publicado para período ${periodo.numero_periodo}`);
+
+    return {
+      mensaje: 'Período iniciado correctamente',
+      periodo: periodo.numero_periodo,
+    };
+  }
+
+  /**
+   * ✅ POST /periodos/cerrar/:id
+   * Cerrar un período (publica evento periodo.cerrado)
+   * Solo Administrador
+   */
+  @Post('cerrar/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async cerrarPeriodo(@Param('id') id: string) {
+    const periodo = await this.appService.obtenerPorId(id);
+    
+    if (!periodo) {
+      throw new Error('Período no encontrado');
+    }
+
+    // 📤 Publicar evento periodo.cerrado
+    const evento: PeriodoCerradoEvent = {
+      periodo_id: periodo.id,
+      numero_periodo: periodo.numero_periodo,
+      fecha_inicio: periodo.fecha_inicio,
+      fecha_fin: periodo.fecha_fin,
+      fecha_cierre: new Date(),
+    };
+
+    await this.rabbitmqService.publishEvent(
+      RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO,
+      evento,
+    );
+
+    this.logger.log(`📤 Evento periodo.cerrado publicado para período ${periodo.numero_periodo}`);
+
+    return {
+      mensaje: 'Período cerrado correctamente',
+      periodo: periodo.numero_periodo,
+      fecha_cierre: new Date(),
+    };
   }
 }

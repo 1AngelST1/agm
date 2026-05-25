@@ -29,7 +29,7 @@ import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RabbitMQService } from './rabbitmq.service';
-import { AlumnoInscritoEvent } from '@shared/events.types';
+import { AlumnoInscritoEvent, AlumnoDesinscrutoEvent } from '@shared/events.types';
 import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import * as crypto from 'crypto';
 
@@ -355,6 +355,19 @@ export class AppController implements OnModuleInit {
     // 🔥 Cambio de estatus a 'baja' en lugar de borrar el registro
     inscripcion.estatus = 'baja';
     await this.inscripcionRepository.save(inscripcion);
+
+    // 📤 Publicar evento alumno.desinscrito
+    const evento: AlumnoDesinscrutoEvent = {
+      alumno_id: matricula,
+      matricula: matricula,
+      nrc_materia: nrc,
+      fecha_desinscripcion: new Date(),
+    };
+
+    await this.rabbitmqService.publishEvent(
+      RABBITMQ_ROUTING_KEYS.ALUMNO_DESINSCRITO,
+      evento,
+    );
 
     return {
       success: true,

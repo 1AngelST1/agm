@@ -107,4 +107,8 @@ export class AppService {
     }
     return materia;
   }
+
+  async obtenerPorId(id: string): Promise<Periodo | null> {
+    return await this.periodoRepository.findOne({ where: { id } });
+  }
 }
