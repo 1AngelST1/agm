@@ -29,7 +29,7 @@ import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RabbitMQService } from './rabbitmq.service';
-import { AlumnoInscritoEvent, AlumnoDesinscrutoEvent, InscripcionRechazadaEvent } from '@shared/events.types';
+import { AlumnoInscritoEvent, AlumnoDesinscrutoEvent, InscripcionRechazadaEvent, MateriaCargaLlenaEvent } from '@shared/events.types';
 import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import * as crypto from 'crypto';
 
@@ -347,6 +347,35 @@ export class AppController implements OnModuleInit {
       console.error('⚠️ Error publicando evento en RabbitMQ:', errorRabbit);
       // No fallar la inscripción si falla RabbitMQ
       // El evento se podría reintentar más tarde
+    }
+
+    // 🔍 Verificar si el grupo alcanzó capacidad máxima (40 estudiantes)
+    try {
+      const inscritos = await this.inscripcionRepository.count({
+        where: { nrc_materia: body.nrc_materia, estatus: 'activo' }
+      });
+
+      const CAPACIDAD_MAXIMA = 40;
+
+      // Si justo se completó el grupo (inscritos = 40), publicar evento
+      if (inscritos === CAPACIDAD_MAXIMA) {
+        const eventoCargaLlena: MateriaCargaLlenaEvent = {
+          nrc_materia: body.nrc_materia,
+          grupo_id: body.nrc_materia, // El NRC es el ID del grupo
+          capacidad_maxima: CAPACIDAD_MAXIMA,
+          inscritos_actuales: inscritos,
+          timestamp: new Date(),
+        };
+
+        await this.rabbitmqService.publishEvent(
+          RABBITMQ_ROUTING_KEYS.MATERIA_CARGA_LLENA,
+          eventoCargaLlena
+        );
+
+        console.log(`🚨 ALERTA: Materia ${body.nrc_materia} alcanzó capacidad máxima (${inscritos}/${CAPACIDAD_MAXIMA})`);
+      }
+    } catch (errorCapacidad) {
+      console.error('❌ Error verificando capacidad del grupo:', errorCapacidad);
     }
 
     try {
