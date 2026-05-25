@@ -14,11 +14,36 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
+const microservices_1 = require("@nestjs/microservices");
 const app_service_1 = require("./app.service");
 let AppController = class AppController {
     appService;
     constructor(appService) {
         this.appService = appService;
+    }
+    onModuleInit() {
+        console.log('✅ [MS-Reportes] Controlador gRPC inicializado');
+    }
+    async generateReport(data) {
+        console.log(`📡 [gRPC] GenerateReport - NRC: ${data.materia_id}, Formato: ${data.formato}`);
+        try {
+            if (!data.materia_id || !data.formato) {
+                throw new common_1.HttpException('Parámetros requeridos: materia_id y formato', common_1.HttpStatus.BAD_REQUEST);
+            }
+            const validFormatos = ['pdf', 'xls'];
+            if (!validFormatos.includes(data.formato)) {
+                throw new common_1.HttpException(`Formato no soportado: ${data.formato}. Soportados: ${validFormatos.join(', ')}`, common_1.HttpStatus.BAD_REQUEST);
+            }
+            const result = await this.appService.generateReportGrpc(data.materia_id, data.formato);
+            return {
+                file_bytes: result.file_bytes,
+                file_name: result.file_name,
+            };
+        }
+        catch (error) {
+            console.error('❌ [gRPC] Error en GenerateReport:', error.message);
+            throw new common_1.HttpException(`Error generando reporte: ${error.message}`, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
     async descargarReporteCalificaciones(nrc, res) {
         try {
@@ -37,6 +62,12 @@ let AppController = class AppController {
     }
 };
 exports.AppController = AppController;
+__decorate([
+    (0, microservices_1.GrpcMethod)('ReportesService', 'GenerateReport'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppController.prototype, "generateReport", null);
 __decorate([
     (0, common_1.Get)('calificaciones/:nrc'),
     __param(0, (0, common_1.Param)('nrc')),

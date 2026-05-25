@@ -37,56 +37,87 @@ services:
     networks:
       - agm-network
 
+  # NOTA: Microservicios se ejecutan con `npm start` en desarrollo
+  # Descomenta cuando tengas los Dockerfiles listos para producción
+
   # 4. Microservicio de Autenticación y Usuarios
-  ms-auth:
-    build:
-      context: .
-      dockerfile: ./ms-auth/Dockerfile
-    container_name: agm_ms_auth
-    ports:
-      - "3000:3000"  # REST API
-      - "5000:5000"  # gRPC
-    environment:
-      - DB_HOST=postgres-db
-      - DB_PORT=5432
-      - DB_USERNAME=admin
-      - DB_PASSWORD=adminpassword
-      - DB_DATABASE=agm_auth_db
-      - JWT_SECRET=AGM-AST
-      - JWT_EXPIRATION=3600
-      - GRPC_PORT=5000
-      - REST_PORT=3000
-    depends_on:
-      - postgres-db
-    restart: unless-stopped
-    networks:
-      - agm-network
+  # ms-auth:
+  #   build:
+  #     context: .
+  #     dockerfile: ./ms-auth/Dockerfile
+  #   container_name: agm_ms_auth
+  #   ports:
+  #     - "3000:3000"  # REST API
+  #     - "5000:5000"  # gRPC
+  #   environment:
+  #     - DB_HOST=postgres-db
+  #     - DB_PORT=5432
+  #     - DB_USERNAME=admin
+  #     - DB_PASSWORD=adminpassword
+  #     - DB_DATABASE=agm_auth_db
+  #     - JWT_SECRET=AGM-AST
+  #     - JWT_EXPIRATION=3600
+  #     - GRPC_PORT=5000
+  #     - REST_PORT=3000
+  #   depends_on:
+  #     - postgres-db
+  #   restart: unless-stopped
+  #   networks:
+  #     - agm-network
 
   # 5. Microservicio de Alumnos
-  ms-alumnos:
-    build:
-      context: .
-      dockerfile: ./ms-alumnos/Dockerfile
-    container_name: agm_ms_alumnos
-    ports:
-      - "3002:3002"  # REST API
-      - "5002:5002"  # gRPC
-    environment:
-      - DB_HOST=postgres-db
-      - DB_PORT=5432
-      - DB_USERNAME=admin
-      - DB_PASSWORD=adminpassword
-      - DB_DATABASE=agm_alumnos_db
-      - AUTH_GRPC_HOST=ms-auth
-      - AUTH_GRPC_PORT=5000
-      - GRPC_PORT=5002
-      - REST_PORT=3002
-    depends_on:
-      - postgres-db
-      - ms-auth
-    restart: unless-stopped
-    networks:
-      - agm-network
+  # ms-alumnos:
+  #   build:
+  #     context: .
+  #     dockerfile: ./ms-alumnos/Dockerfile
+  #   container_name: agm_ms_alumnos
+  #   ports:
+  #     - "3002:3002"  # REST API
+  #     - "5002:5002"  # gRPC
+  #   environment:
+  #     - DB_HOST=postgres-db
+  #     - DB_PORT=5432
+  #     - DB_USERNAME=admin
+  #     - DB_PASSWORD=adminpassword
+  #     - DB_DATABASE=agm_alumnos_db
+  #     - AUTH_GRPC_HOST=ms-auth
+  #     - AUTH_GRPC_PORT=5000
+  #     - GRPC_PORT=5002
+  #     - REST_PORT=3002
+  #   depends_on:
+  #     - postgres-db
+  #     - ms-auth
+  #   restart: unless-stopped
+  #   networks:
+  #     - agm-network
+
+  # 6. Microservicio de Asistencias (Conexión a Postgres y Redis)
+  # ms-asistencias:
+  #   build:
+  #     context: .
+  #     dockerfile: ./ms-asistencias/Dockerfile
+  #   container_name: agm_ms_asistencias
+  #   ports:
+  #     - "3005:3005"  # REST API
+  #     - "5005:5005"  # gRPC
+  #   environment:
+  #     - DB_HOST=postgres-db
+  #     - DB_PORT=5432
+  #     - DB_USERNAME=admin
+  #     - DB_PASSWORD=adminpassword
+  #     - DB_DATABASE=agm_asistencias_db
+  #     - REDIS_HOST=redis-cache
+  #     - REDIS_PORT=6379
+  #     - AUTH_GRPC_URL=ms-auth:5000
+  #     - PORT=3005
+  #     - GRPC_PORT=5005
+  #   depends_on:
+  #     - postgres-db
+  #     - redis-cache
+  #     - ms-auth
+  #   restart: unless-stopped
+  #   networks:
+  #     - agm-network
 
 volumes:
   pgdata:
@@ -95,31 +126,3 @@ volumes:
 networks:
   agm-network:
     driver: bridge
-  
-# 6. Microservicio de Asistencias (Conexión a Postgres y Redis)
-  ms-asistencias:
-    build:
-      context: .
-      dockerfile: ./ms-asistencias/Dockerfile
-    container_name: agm_ms_asistencias
-    ports:
-      - "3005:3005"  # REST API
-      - "5005:5005"  # gRPC
-    environment:
-      - DB_HOST=postgres-db
-      - DB_PORT=5432
-      - DB_USERNAME=admin
-      - DB_PASSWORD=adminpassword
-      - DB_DATABASE=agm_asistencias_db
-      - REDIS_HOST=redis-cache
-      - REDIS_PORT=6379
-      - AUTH_GRPC_URL=ms-auth:5000
-      - PORT=3005
-      - GRPC_PORT=5005
-    depends_on:
-      - postgres-db
-      - redis-cache
-      - ms-auth
-    restart: unless-stopped
-    networks:
-      - agm-network

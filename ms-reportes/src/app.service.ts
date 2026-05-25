@@ -8,6 +8,14 @@ import { lastValueFrom, Observable } from 'rxjs';
 import * as ExcelJS from 'exceljs';
 
 // Interfaz para callar a ESLint
+interface CalificacionesService {
+  getConcentrado(data: { nrc: string }): Observable<any>;
+}
+
+interface AsistenciasService {
+  getAsistenciasByAlumno(data: { matricula: string; nrc: string }): Observable<any>;
+}
+
 interface AlumnoCalificado {
   matricula: string;
   nombre_estudiante: string;
@@ -18,22 +26,50 @@ interface AlumnoCalificado {
   estatus: string;
 }
 
-interface CalificacionesService {
-  getConcentrado(data: { nrc: string }): Observable<any>;
-}
-
 @Injectable()
 export class AppService implements OnModuleInit {
   private calificacionesService!: CalificacionesService;
+  private asistenciasService!: AsistenciasService;
 
   constructor(
     @Inject('CALIFICACIONES_SERVICE') private calificacionesClient: ClientGrpc,
     @Inject('ALUMNOS_SERVICE') private alumnosClient: ClientGrpc,
+    @Inject('ASISTENCIAS_SERVICE') private asistenciasClient: ClientGrpc,
   ) {}
 
   onModuleInit() {
     this.calificacionesService =
       this.calificacionesClient.getService<CalificacionesService>('CalificacionesService');
+    this.asistenciasService =
+      this.asistenciasClient.getService<AsistenciasService>('AsistenciasService');
+  }
+
+  async generateReportGrpc(
+    nrc: string,
+    formato: string,
+  ): Promise<{ file_bytes: Buffer; file_name: string }> {
+    console.log(`📊 [gRPC] Generando reporte de ${formato} para NRC: ${nrc}`);
+
+    try {
+      const workbook = await this.generarExcelCalificaciones(nrc);
+      const bufferData = await workbook.xlsx.writeBuffer();
+      const buffer = Buffer.from(bufferData as any);
+
+      const fileName = `Acta_Calificaciones_${nrc}_${Date.now()}.${formato === 'xls' ? 'xlsx' : formato}`;
+
+      console.log(`✅ [gRPC] Reporte generado: ${fileName} (${buffer.byteLength} bytes)`);
+
+      return {
+        file_bytes: buffer,
+        file_name: fileName,
+      };
+    } catch (error) {
+      console.error('❌ [gRPC] Error generando reporte:', (error as Error).message);
+      throw new HttpException(
+        'Error generando reporte',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async generarExcelCalificaciones(nrc: string): Promise<ExcelJS.Workbook> {

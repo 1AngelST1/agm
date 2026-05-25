@@ -1,5 +1,9 @@
 $kind: http-request
 name: activar el perido
-url: http://localhost:3001/periodos/PER-2E9046D0/activar
+url: http://localhost:3001/periodos/PER-207B32A2/activar
 method: PUT
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZjE2ZWFmNWMiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Nzk2ODcyODgsImV4cCI6MTc3OTY5NDQ4OH0.3NVhV85QfXrtjAJZ_kioMxHpYdnkD-1VRSya4FZqWIg
 order: 4150569693066321

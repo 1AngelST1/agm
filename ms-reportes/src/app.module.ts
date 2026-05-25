@@ -23,7 +23,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'calificaciones',
           protoPath: getProtoPath('calificaciones.proto'),
-          url: 'localhost:5003',
+          url: `${process.env.CALIFICACIONES_GRPC_HOST || 'localhost'}:${process.env.CALIFICACIONES_GRPC_PORT || 5003}`,
         },
       },
       {
@@ -32,7 +32,16 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'alumnos',
           protoPath: getProtoPath('alumnos.proto'),
-          url: 'localhost:5002',
+          url: `${process.env.ALUMNOS_GRPC_HOST || 'localhost'}:${process.env.ALUMNOS_GRPC_PORT || 5002}`,
+        },
+      },
+      {
+        name: 'ASISTENCIAS_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'asistencias',
+          protoPath: getProtoPath('asistencias.proto'),
+          url: `${process.env.ASISTENCIAS_GRPC_HOST || 'localhost'}:${process.env.ASISTENCIAS_GRPC_PORT || 5004}`,
         },
       },
     ]),

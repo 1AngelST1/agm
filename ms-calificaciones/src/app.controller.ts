@@ -590,6 +590,47 @@ export class AppController implements OnModuleInit {
   // 📊 CONCENTRADO DE CALIFICACIONES
   // ==========================================
 
+  private async calcularPromedioPonderado(calificacion: Calificacion): Promise<number> {
+    // Obtener ponderaciones por materia
+    const grupo = await this.grupoRepository.findOne({
+      where: { nrc: calificacion.nrc_grupo },
+      relations: ['materia'],
+    });
+
+    if (!grupo) return 0;
+
+    const ponderacion = await this.ponderacionRepository.findOne({
+      where: { materia_clave: grupo.materia.clave },
+    }) || {
+      examen_porcentaje: 40,
+      tarea_porcentaje: 30,
+      proyecto_porcentaje: 30,
+    };
+
+    // Buscar calificaciones del alumno en este grupo por tipo
+    const calificacionesPorTipo = await this.calificacionRepository.find({
+      where: { matricula_alumno: calificacion.matricula_alumno, nrc_grupo: calificacion.nrc_grupo },
+    });
+
+    const examenes = calificacionesPorTipo.filter(c => c.tipo_calificacion === 'examen');
+    const tareas = calificacionesPorTipo.filter(c => c.tipo_calificacion === 'tarea');
+    const proyectos = calificacionesPorTipo.filter(c => c.tipo_calificacion === 'proyecto');
+
+    const promediar = (arr: Calificacion[]) =>
+      arr.length > 0 ? arr.reduce((sum, c) => sum + Number(c.calificacion_ordinaria), 0) / arr.length : 0;
+
+    const examenNum = promediar(examenes);
+    const tareaNum = promediar(tareas);
+    const proyectoNum = promediar(proyectos);
+
+    const promedioPonderado =
+      (examenNum * Number(ponderacion.examen_porcentaje) / 100) +
+      (tareaNum * Number(ponderacion.tarea_porcentaje) / 100) +
+      (proyectoNum * Number(ponderacion.proyecto_porcentaje) / 100);
+
+    return Math.round(promedioPonderado * 100) / 100;
+  }
+
   @Get('concentrado/:nrc')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
@@ -720,5 +761,134 @@ export class AppController implements OnModuleInit {
     };
     
     return respuestaFormato;
+  }
+
+  // ==========================================
+  // 📡 MÉTODO GRPC: GetPromedioAlumno
+  // ==========================================
+  @GrpcMethod('CalificacionesService', 'GetPromedioAlumno')
+  async getPromedioAlumnoGrpc(data: { matricula: string }) {
+    console.log(`📡 [gRPC] Solicitud de promedio para matrícula: ${data.matricula}`);
+    
+    // Buscar todas las calificaciones del alumno
+    const calificaciones = await this.calificacionRepository.find({
+      where: { matricula_alumno: data.matricula },
+      relations: ['grupo', 'grupo.materia'],
+    });
+
+    if (calificaciones.length === 0) {
+      throw new NotFoundException(`No hay calificaciones para el alumno ${data.matricula}`);
+    }
+
+    // Calcular promedios
+    let sumaCalificaciones = 0;
+    let totalMaterias = 0;
+    let aprobadas = 0;
+    let reprobadas = 0;
+    const materias: any[] = [];
+
+    for (const cal of calificaciones) {
+      const promedioPonderado = await this.calcularPromedioPonderado(cal);
+      sumaCalificaciones += promedioPonderado;
+      totalMaterias++;
+
+      const estatus = promedioPonderado >= 6.0 ? 'Aprobado' : 'Reprobado';
+      if (estatus === 'Aprobado') {
+        aprobadas++;
+      } else {
+        reprobadas++;
+      }
+
+      materias.push({
+        nrc: cal.grupo?.nrc || '',
+        materia_nombre: cal.grupo?.materia?.nombre || 'N/A',
+        calificacion_final: Number(promedioPonderado.toFixed(2)),
+        estatus: estatus,
+      });
+    }
+
+    const promedioGeneral = totalMaterias > 0 ? sumaCalificaciones / totalMaterias : 0;
+
+    return {
+      matricula: data.matricula,
+      nombre_estudiante: 'Estudiante', // Se puede mejorar obteniendo del servicio de alumnos
+      promedio_general: Number(promedioGeneral.toFixed(2)),
+      total_materias: totalMaterias,
+      materias_aprobadas: aprobadas,
+      materias_reprobadas: reprobadas,
+      materias: materias,
+    };
+  }
+
+  // ==========================================
+  // 📡 MÉTODO GRPC: GetEstadisticasMateria
+  // ==========================================
+  @GrpcMethod('CalificacionesService', 'GetEstadisticasMateria')
+  async getEstadisticasMateriaGrpc(data: { nrc: string }) {
+    console.log(`📡 [gRPC] Solicitud de estadísticas para NRC: ${data.nrc}`);
+
+    // Buscar grupo por NRC
+    const grupo = await this.grupoRepository.findOne({
+      where: { nrc: data.nrc },
+      relations: ['materia'],
+    });
+
+    if (!grupo) {
+      throw new NotFoundException(`Grupo con NRC ${data.nrc} no encontrado`);
+    }
+
+    // Buscar todas las calificaciones del grupo
+    const calificaciones = await this.calificacionRepository.find({
+      where: { nrc_grupo: data.nrc },
+    });
+
+    if (calificaciones.length === 0) {
+      throw new NotFoundException(`No hay calificaciones registradas para el NRC ${data.nrc}`);
+    }
+
+    // Calcular estadísticas
+    let sumaCalificaciones = 0;
+    let aprobados = 0;
+    let reprobados = 0;
+    let maxima = 0;
+    let minima = 100;
+
+    const calificacionesCalculadas: number[] = [];
+
+    for (const cal of calificaciones) {
+      const promedio = await this.calcularPromedioPonderado(cal);
+      calificacionesCalculadas.push(promedio);
+      sumaCalificaciones += promedio;
+
+      if (promedio >= 6.0) {
+        aprobados++;
+      } else {
+        reprobados++;
+      }
+
+      maxima = Math.max(maxima, promedio);
+      minima = Math.min(minima, promedio);
+    }
+
+    const promedioGrupo = sumaCalificaciones / calificaciones.length;
+
+    // Calcular desviación estándar
+    const varianza =
+      calificacionesCalculadas.reduce((sum, cal) => sum + Math.pow(cal - promedioGrupo, 2), 0) /
+      calificaciones.length;
+    const desviacionEstandar = Math.sqrt(varianza);
+
+    return {
+      nrc: data.nrc,
+      materia_nombre: grupo.materia?.nombre || 'N/A',
+      clave_materia: grupo.materia?.clave || 'N/A',
+      total_estudiantes: calificaciones.length,
+      estudiantes_aprobados: aprobados,
+      estudiantes_reprobados: reprobados,
+      promedio_grupo: Number(promedioGrupo.toFixed(2)),
+      calificacion_maxima: Number(maxima.toFixed(2)),
+      calificacion_minima: Number(minima.toFixed(2)),
+      desviacion_estandar: Number(desviacionEstandar.toFixed(2)),
+    };
   }
 }

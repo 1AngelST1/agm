@@ -1,4 +1,24 @@
 $kind: http-request
-url: ""
-method: GET
+name: calificacion examen
+url: http://localhost:3003/calificaciones/calificar
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nrc_grupo\": \"50130\",\r
+
+    \  \"matricula_alumno\": \"202253882\",\r
+
+    \  \"calificacion_ordinaria\": 10,\r
+
+    \  \"tipo_calificacion\": \"examen\",\r
+
+    \  \"actividad_id\": \"act_hvull7h5\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOGJmNWM2NGQiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3OTQ2OTI5NSwiZXhwIjoxNzc5NDc2NDk1fQ.8vUW234zE2rJsLFLzg74fjHReNXmzgkkoC-K_8wtJ4Y
 order: 4496733352610548

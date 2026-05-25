@@ -5,9 +5,9 @@ package calificaciones;
 service CalificacionesService {
   rpc GetCalificacionesByMatricula(GetCalificacionesRequest) returns (CalificacionesResponse);
   rpc CreateCalificacion(CreateCalificacionRequest) returns (CalificacionResponse);
-  
-  // 🔥 AQUÍ ESTÁ EL MÉTODO QUE FALTABA
   rpc GetConcentrado(ConcentradoRequest) returns (ConcentradoResponse);
+  rpc GetPromedioAlumno(GetPromedioAlumnoRequest) returns (GetPromedioAlumnoResponse);
+  rpc GetEstadisticasMateria(GetEstadisticasMateriaRequest) returns (GetEstadisticasMateriaResponse);
 }
 
 message GetCalificacionesRequest {
@@ -83,4 +83,50 @@ message ConcentradoResponse {
   int32 total_estudiantes = 4;
   repeated AlumnoNota calificaciones = 5; 
   PonderacionInfo ponderaciones = 6;
+}
+
+// ===============================================
+// NUEVOS MENSAJES PARA GetPromedioAlumno
+// ===============================================
+
+message GetPromedioAlumnoRequest {
+  string matricula = 1;
+}
+
+message GetPromedioAlumnoResponse {
+  string matricula = 1;
+  string nombre_estudiante = 2;
+  double promedio_general = 3;
+  int32 total_materias = 4;
+  int32 materias_aprobadas = 5;
+  int32 materias_reprobadas = 6;
+  repeated MateriaCalificacion materias = 7;
+}
+
+message MateriaCalificacion {
+  string nrc = 1;
+  string materia_nombre = 2;
+  double calificacion_final = 3;
+  string estatus = 4;
+}
+
+// ===============================================
+// NUEVOS MENSAJES PARA GetEstadisticasMateria
+// ===============================================
+
+message GetEstadisticasMateriaRequest {
+  string nrc = 1;
+}
+
+message GetEstadisticasMateriaResponse {
+  string nrc = 1;
+  string materia_nombre = 2;
+  string clave_materia = 3;
+  int32 total_estudiantes = 4;
+  int32 estudiantes_aprobados = 5;
+  int32 estudiantes_reprobados = 6;
+  double promedio_grupo = 7;
+  double calificacion_maxima = 8;
+  double calificacion_minima = 9;
+  double desviacion_estandar = 10;
 }

@@ -3,9 +3,78 @@ syntax = "proto3";
 package asistencias;
 
 service AsistenciasService {
-  rpc GetAsistenciasByAlumno (AsistenciaRequest) returns (AsistenciaResponse) {}
+  // Crear sesión de asistencia (profesor)
+  rpc CrearSesion(CrearSesionRequest) returns (CrearSesionResponse);
+  
+  // Generar QR del alumno para una sesión
+  rpc GenerarQRAlumno(GenerarQRRequest) returns (GenerarQRResponse);
+  
+  // Validar asistencia al escanear QR (profesor)
+  rpc ValidarAsistencia(ValidarAsistenciaRequest) returns (ValidarAsistenciaResponse);
+  
+  // Obtener asistencias del alumno
+  rpc GetAsistenciasByAlumno(AsistenciaRequest) returns (AsistenciaResponse);
+  
+  // Cerrar sesión de asistencia
+  rpc CerrarSesion(CerrarSesionRequest) returns (CerrarSesionResponse);
 }
 
+// ============================================
+// CREAR SESIÓN (Profesor abre asistencia)
+// ============================================
+message CrearSesionRequest {
+  string profesor_id = 1;
+  string nrc = 2;
+  int32 duracion_minutos = 3;  // Por cuánto tiempo es válido escanear
+}
+
+message CrearSesionResponse {
+  string sesion_id = 1;
+  string codigo_sesion = 2;
+  string nrc = 3;
+  int64 timestamp_inicio = 4;
+  int32 duracion_minutos = 5;
+  string estado = 6;
+}
+
+// ============================================
+// GENERAR QR ALUMNO
+// ============================================
+message GenerarQRRequest {
+  string matricula = 1;
+  string sesion_id = 2;
+}
+
+message GenerarQRResponse {
+  string qr_code = 1;          // El código QR en base64 o string
+  string qr_data = 2;          // Datos del QR: matricula|sesion_id|hash
+  string sesion_id = 3;
+  string matricula = 4;
+  int64 timestamp_generacion = 5;
+  bool valido = 6;
+}
+
+// ============================================
+// VALIDAR ASISTENCIA (Profesor escanea)
+// ============================================
+message ValidarAsistenciaRequest {
+  string sesion_id = 1;
+  string qr_data = 2;           // Datos escaneados del QR
+  string tipo = 3;              // "presente" o "retardo"
+}
+
+message ValidarAsistenciaResponse {
+  bool success = 1;
+  string message = 2;
+  string asistencia_id = 3;
+  string matricula = 4;
+  string tipo = 5;
+  int64 timestamp_registro = 6;
+}
+
+// ============================================
+// OBTENER ASISTENCIAS (Reportes)
+// ============================================
 message AsistenciaRequest {
   string matricula = 1;
   string nrc = 2;
@@ -14,4 +83,26 @@ message AsistenciaRequest {
 message AsistenciaResponse {
   int32 total_asistencias = 1;
   int32 total_faltas = 2;
+  int32 total_retardos = 3;
+  double porcentaje_asistencia = 4;
+  repeated AsistenciaDetalle asistencias = 5;
+}
+
+message AsistenciaDetalle {
+  int64 fecha = 1;
+  string tipo = 2;
+  string clase = 3;
+}
+
+// ============================================
+// CERRAR SESIÓN
+// ============================================
+message CerrarSesionRequest {
+  string sesion_id = 1;
+}
+
+message CerrarSesionResponse {
+  bool success = 1;
+  string message = 2;
+  int32 total_asistencias_registradas = 3;
 }

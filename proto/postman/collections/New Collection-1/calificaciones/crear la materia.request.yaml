@@ -6,9 +6,9 @@ body:
   type: json
   content: "{\r
 
-    \  \"clave\": \"ITIS260\",\r
+    \  \"clave\": \"ITI-0705\",\r
 
-    \  \"nombre\": \"Servicios Web\",\r
+    \  \"nombre\": \"Servicios ang\",\r
 
     \  \"creditos\": 6,\r
 
@@ -20,5 +20,5 @@ body:
 auth:
   type: bearer
   credentials:
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOGJmNWM2NGQiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3OTA4NTA0OCwiZXhwIjoxNzc5MDkyMjQ4fQ.hlP90LENqQZRVeShi0W7O6qOFwW_9y-yqgtCopS0dVw
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZjE2ZWFmNWMiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Nzk2ODcyODgsImV4cCI6MTc3OTY5NDQ4OH0.3NVhV85QfXrtjAJZ_kioMxHpYdnkD-1VRSya4FZqWIg
 order: 1778021147844

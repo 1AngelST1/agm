@@ -11,6 +11,7 @@ import Redis from 'ioredis';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Asistencia } from './asistencia.entity';
+import { SesionAsistencia } from './sesion-asistencia.entity';
 
 @Global()
 @Module({
@@ -42,7 +43,7 @@ export class RedisConfigModule {}
       autoLoadEntities: true,
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([Asistencia]),
+    TypeOrmModule.forFeature([Asistencia, SesionAsistencia]),
     RedisConfigModule,
     ClientsModule.register([
       {
@@ -51,7 +52,42 @@ export class RedisConfigModule {}
         options: {
           package: 'auth',
           protoPath: join(__dirname, '../../proto/auth.proto'),
-          url: process.env.AUTH_GRPC_URL || 'localhost:5000',
+          url: process.env.AUTH_GRPC_HOST
+            ? `${process.env.AUTH_GRPC_HOST}:${process.env.AUTH_GRPC_PORT || 5000}`
+            : 'localhost:5000',
+        },
+      },
+      {
+        name: 'ALUMNOS_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'alumnos',
+          protoPath: join(__dirname, '../../proto/alumnos.proto'),
+          url: process.env.ALUMNOS_GRPC_HOST
+            ? `${process.env.ALUMNOS_GRPC_HOST}:${process.env.ALUMNOS_GRPC_PORT || 5002}`
+            : 'localhost:5002',
+        },
+      },
+      {
+        name: 'PERIODOS_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'periodos',
+          protoPath: join(__dirname, '../../proto/periodos.proto'),
+          url: process.env.PERIODOS_GRPC_HOST
+            ? `${process.env.PERIODOS_GRPC_HOST}:${process.env.PERIODOS_GRPC_PORT || 5001}`
+            : 'localhost:5001',
+        },
+      },
+      {
+        name: 'NOTIFICACIONES_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'notificaciones',
+          protoPath: join(__dirname, '../../proto/notificaciones.proto'),
+          url: process.env.NOTIFICACIONES_GRPC_HOST
+            ? `${process.env.NOTIFICACIONES_GRPC_HOST}:${process.env.NOTIFICACIONES_GRPC_PORT || 5005}`
+            : 'localhost:5005',
         },
       },
     ]),

@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  ConflictException,
   Get,
   Headers,
 } from '@nestjs/common';
@@ -168,6 +169,17 @@ export class AppController {
     // Hashear contraseña
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+
+    // ✅ VALIDACIÓN: Verificar si el email ya existe
+    const usuarioExistente = await this.userRepository.findOne({
+      where: { email: body.email },
+    });
+
+    if (usuarioExistente) {
+      throw new ConflictException(
+        `El correo ${body.email} ya está registrado en el sistema. Por favor, usa otro correo.`,
+      );
+    }
 
     // Crear usuario
     const nuevoUsuario = this.userRepository.create({

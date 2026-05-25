@@ -52,14 +52,37 @@ const ExcelJS = __importStar(require("exceljs"));
 let AppService = class AppService {
     calificacionesClient;
     alumnosClient;
+    asistenciasClient;
     calificacionesService;
-    constructor(calificacionesClient, alumnosClient) {
+    asistenciasService;
+    constructor(calificacionesClient, alumnosClient, asistenciasClient) {
         this.calificacionesClient = calificacionesClient;
         this.alumnosClient = alumnosClient;
+        this.asistenciasClient = asistenciasClient;
     }
     onModuleInit() {
         this.calificacionesService =
             this.calificacionesClient.getService('CalificacionesService');
+        this.asistenciasService =
+            this.asistenciasClient.getService('AsistenciasService');
+    }
+    async generateReportGrpc(nrc, formato) {
+        console.log(`📊 [gRPC] Generando reporte de ${formato} para NRC: ${nrc}`);
+        try {
+            const workbook = await this.generarExcelCalificaciones(nrc);
+            const bufferData = await workbook.xlsx.writeBuffer();
+            const buffer = Buffer.from(bufferData);
+            const fileName = `Acta_Calificaciones_${nrc}_${Date.now()}.${formato === 'xls' ? 'xlsx' : formato}`;
+            console.log(`✅ [gRPC] Reporte generado: ${fileName} (${buffer.byteLength} bytes)`);
+            return {
+                file_bytes: buffer,
+                file_name: fileName,
+            };
+        }
+        catch (error) {
+            console.error('❌ [gRPC] Error generando reporte:', error.message);
+            throw new common_1.HttpException('Error generando reporte', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
     async generarExcelCalificaciones(nrc) {
         try {
@@ -114,6 +137,7 @@ exports.AppService = AppService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('CALIFICACIONES_SERVICE')),
     __param(1, (0, common_1.Inject)('ALUMNOS_SERVICE')),
-    __metadata("design:paramtypes", [Object, Object])
+    __param(2, (0, common_1.Inject)('ASISTENCIAS_SERVICE')),
+    __metadata("design:paramtypes", [Object, Object, Object])
 ], AppService);
 //# sourceMappingURL=app.service.js.map
