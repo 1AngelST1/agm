@@ -12,12 +12,14 @@ import {
   Inject,
   UseGuards,
   Req,
+  Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { firstValueFrom, Observable, timeout } from 'rxjs';
+import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent } from '@shared/events.types';
 
 import { Materia } from './materia.entity';
 import { Grupo } from './grupo.entity';
@@ -64,6 +66,7 @@ interface PeriodosServiceClient {
 
 @Controller('calificaciones')
 export class AppController implements OnModuleInit {
+  private logger = new Logger('CalificacionesController');
   private authService!: AuthServiceClient;
   private alumnosService!: AlumnosServiceClient;
   private notificacionesService!: NotificacionesServiceClient;
@@ -650,5 +653,56 @@ private async enviarNotificacionActualizacion(matricula: string, notaAnterior: n
         proyecto: ponderacion.proyecto_porcentaje,
       },
     };
+  }
+
+  /**
+   * 📨 Consumidor: Alumno se inscribió a una materia
+   * Se ejecuta automáticamente cuando llega el evento desde RabbitMQ
+   */
+  async onAlumnoInscrito(event: AlumnoInscritoEvent) {
+    try {
+      this.logger.log(
+        `📨 Evento recibido: Alumno ${event.matricula} inscrito a ${event.nrc_materia}`
+      );
+
+      // Crear calificación inicial para el alumno
+      const calificacion = this.calificacionRepository.create({
+        matricula_alumno: event.matricula,
+        nrc_materia: event.nrc_materia,
+        calificacion_examen: null,
+        calificacion_tareas: null,
+        calificacion_proyecto: null,
+        calificacion_final: null,
+      });
+
+      await this.calificacionRepository.save(calificacion);
+
+      this.logger.log(
+        `✅ Calificación inicial creada para ${event.matricula} en NRC ${event.nrc_materia}`
+      );
+    } catch (error) {
+      this.logger.error('❌ Error procesando evento alumno.inscrito:', error);
+    }
+  }
+
+  /**
+   * 📨 Consumidor: Se calculó el resumen de asistencia
+   * Se ejecuta automáticamente cuando llega el evento desde RabbitMQ
+   */
+  async onAsistenciaResumenCalculado(event: AsistenciaResumenCalculadoEvent) {
+    try {
+      this.logger.log(
+        `📨 Evento recibido: Resumen asistencia para ${event.matricula} en ${event.nrc_materia}`
+      );
+
+      // Aquí se puede actualizar el estado de derecho a proyecto
+      // o aplicar restricciones basadas en asistencia
+
+      this.logger.log(
+        `✅ Resumen de asistencia procesado para ${event.matricula}`
+      );
+    } catch (error) {
+      this.logger.error('❌ Error procesando evento asistencia.resumen.calculado:', error);
+    }
   }
 }

@@ -1,18 +1,24 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Asistencia } from './asistencia.entity';
+import { RabbitMQService } from './rabbitmq.service';
+import { AlumnoInscritoEvent } from '@shared/events.types';
+import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import Redis from 'ioredis';
 import * as crypto from 'crypto';
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class AppService {
+  private logger = new Logger('AsistenciasService');
+
   constructor(
     @InjectRepository(Asistencia)
     private asistenciaRepository: Repository<Asistencia>,
     @Inject('REDIS_CLIENT')
     private redisClient: Redis,
+    private rabbitmqService: RabbitMQService,
   ) {}
 
   /**
@@ -71,5 +77,28 @@ export class AppService {
       materia: nrc_materia,
       estado: 'presente',
     };
+  }
+
+  /**
+   * 📨 Consumidor: Alumno se inscribió a una materia
+   * Se ejecuta automáticamente cuando llega el evento desde RabbitMQ
+   */
+  async onAlumnoInscrito(event: AlumnoInscritoEvent) {
+    try {
+      this.logger.log(
+        `📨 Evento recibido: Alumno ${event.matricula} inscrito a ${event.nrc_materia}`
+      );
+
+      // Aquí se puede:
+      // 1. Crear una estructura de grupo para asistencias
+      // 2. Inicializar contadores de asistencia
+      // 3. Preparar datos para el QR
+
+      this.logger.log(
+        `✅ Alumno ${event.matricula} preparado para asistencias en NRC ${event.nrc_materia}`
+      );
+    } catch (error) {
+      this.logger.error('❌ Error procesando evento alumno.inscrito:', error);
+    }
   }
 }

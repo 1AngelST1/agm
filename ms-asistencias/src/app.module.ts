@@ -11,6 +11,8 @@ import Redis from 'ioredis';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Asistencia } from './asistencia.entity';
+import { RabbitMQModule } from './rabbitmq.module';
+import { RabbitMQListener } from './rabbitmq.listener';
 
 @Global()
 @Module({
@@ -43,6 +45,7 @@ export class RedisConfigModule {}
       synchronize: true,
     }),
     TypeOrmModule.forFeature([Asistencia]),
+    RabbitMQModule,
     RedisConfigModule,
     ClientsModule.register([
       {
@@ -57,6 +60,6 @@ export class RedisConfigModule {}
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RabbitMQListener],
 })
 export class AppModule {}

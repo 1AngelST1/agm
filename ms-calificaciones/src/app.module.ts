@@ -12,6 +12,8 @@ import { CalificacionFinal } from './calificacion-final.entity';
 import { Ponderacion } from './ponderacion.entity';
 import { Actividad } from './actividad.entity';
 import { JwtStrategy } from './guards/jwt.strategy';
+import { RabbitMQModule } from './rabbitmq.module';
+import { RabbitMQListener } from './rabbitmq.listener';
 
 // Función para obtener la ruta de los .proto
 const getProtoPath = (protoFile: string) => {
@@ -24,6 +26,7 @@ const getProtoPath = (protoFile: string) => {
 @Module({
   imports: [
     PassportModule,
+    RabbitMQModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -79,6 +82,6 @@ const getProtoPath = (protoFile: string) => {
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService, JwtStrategy],
+  providers: [AppService, JwtStrategy, RabbitMQListener],
 })
 export class AppModule {}
