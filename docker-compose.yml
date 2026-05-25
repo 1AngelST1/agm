@@ -37,6 +37,28 @@ services:
     networks:
       - agm-network
 
+  # 3.5. Message Broker (RabbitMQ) - Para comunicación asíncrona entre microservicios
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: agm_rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI (usuario: guest, contraseña: guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: agm_user
+      RABBITMQ_DEFAULT_PASS: agm_password
+      RABBITMQ_DEFAULT_VHOST: /agm
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   # 4. Microservicio de Autenticación y Usuarios
   ms-auth:
     build:
@@ -81,9 +103,11 @@ services:
       - AUTH_GRPC_PORT=5000
       - GRPC_PORT=5002
       - REST_PORT=3002
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
     depends_on:
       - postgres-db
       - ms-auth
+      - rabbitmq
     restart: unless-stopped
     networks:
       - agm-network
@@ -91,6 +115,7 @@ services:
 volumes:
   pgdata:
   mongodata:
+  rabbitmq_data:
 
 networks:
   agm-network:
@@ -116,10 +141,12 @@ networks:
       - AUTH_GRPC_URL=ms-auth:5000
       - PORT=3005
       - GRPC_PORT=5005
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
     depends_on:
       - postgres-db
       - redis-cache
       - ms-auth
+      - rabbitmq
     restart: unless-stopped
     networks:
       - agm-network
