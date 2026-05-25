@@ -11,6 +11,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Alumno } from './alumno.entity';
 import { Inscripcion } from './inscripcion.entity';
+import { RabbitMQModule } from './rabbitmq.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { Inscripcion } from './inscripcion.entity';
       synchronize: true,
     }),
     TypeOrmModule.forFeature([Alumno, Inscripcion]),
+    RabbitMQModule,
     ClientsModule.register([
       {
         name: 'AUTH_SERVICE',

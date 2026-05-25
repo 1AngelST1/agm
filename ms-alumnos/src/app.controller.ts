@@ -28,6 +28,9 @@ import { Observable, lastValueFrom, timeout } from 'rxjs';
 import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
+import { RabbitMQService } from './rabbitmq.service';
+import { AlumnoInscritoEvent } from '@shared/events.types';
+import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import * as crypto from 'crypto';
 
 interface AuthResponse {
@@ -76,6 +79,7 @@ export class AppController implements OnModuleInit {
     @InjectRepository(Alumno) private alumnoRepository: Repository<Alumno>,
     @InjectRepository(Inscripcion)
     private inscripcionRepository: Repository<Inscripcion>,
+    private rabbitmqService: RabbitMQService,
   ) {}
 
   onModuleInit() {
@@ -273,6 +277,30 @@ export class AppController implements OnModuleInit {
     });
 
     await this.inscripcionRepository.save(nuevaInscripcion);
+
+    // 📨 PUBLICAR EVENTO: Alumno inscrito
+    // Este evento será consumido por ms-asistencias, ms-calificaciones, ms-periodos, etc
+    try {
+      const alumnoInscritoEvent: AlumnoInscritoEvent = {
+        alumno_id: alumnoLocal.id,
+        matricula: body.matricula_alumno,
+        nrc_materia: body.nrc_materia,
+        periodo: 'actual', // TODO: obtener período actual desde ms-periodos
+        fecha_inscripcion: new Date(),
+        docente_id: undefined, // Será asignado por ms-periodos
+      };
+
+      await this.rabbitmqService.publishEvent(
+        RABBITMQ_ROUTING_KEYS.ALUMNO_INSCRITO,
+        alumnoInscritoEvent
+      );
+
+      console.log('✅ Evento alumno.inscrito publicado en RabbitMQ');
+    } catch (errorRabbit) {
+      console.error('⚠️ Error publicando evento en RabbitMQ:', errorRabbit);
+      // No fallar la inscripción si falla RabbitMQ
+      // El evento se podría reintentar más tarde
+    }
 
     try {
       const notifData = {
