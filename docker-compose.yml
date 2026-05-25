@@ -150,3 +150,88 @@ networks:
     restart: unless-stopped
     networks:
       - agm-network
+
+  # 7. Microservicio de Calificaciones
+  ms-calificaciones:
+    build:
+      context: .
+      dockerfile: ./ms-calificaciones/Dockerfile
+    container_name: agm_ms_calificaciones
+    ports:
+      - "3003:3003"  # REST API
+      - "5003:5003"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_calificaciones_db
+      - AUTH_GRPC_URL=ms-auth:5000
+      - PORT=3003
+      - GRPC_PORT=5003
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - postgres-db
+      - ms-auth
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 8. Microservicio de Periodos
+  ms-periodos:
+    build:
+      context: .
+      dockerfile: ./ms-periodos/Dockerfile
+    container_name: agm_ms_periodos
+    ports:
+      - "3004:3004"  # REST API
+      - "5004:5004"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_periodos_db
+      - AUTH_GRPC_URL=ms-auth:5000
+      - PORT=3004
+      - GRPC_PORT=5004
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - postgres-db
+      - ms-auth
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 9. Microservicio de Notificaciones
+  ms-notificaciones:
+    build:
+      context: .
+      dockerfile: ./ms-notificaciones/Dockerfile
+    container_name: agm_ms_notificaciones
+    ports:
+      - "3006:3006"  # REST API
+    environment:
+      - DB_HOST=mongo-db
+      - DB_PORT=27017
+      - DB_NAME=agm_notificaciones_db
+      - PORT=3006
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - mongo-db
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+volumes:
+  pgdata:
+  mongodata:
+  rabbitmq_data:
+
+networks:
+  agm-network:
+    driver: bridge
+      - agm-network
