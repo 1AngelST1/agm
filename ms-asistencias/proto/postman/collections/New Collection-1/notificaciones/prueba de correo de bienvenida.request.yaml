@@ -1,0 +1,14 @@
+$kind: http-request
+name: prueba de correo de bienvenida
+url: http://localhost:3004/notificaciones/bienvenida
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"email_destino\": \"angel.sarmiento0312@gmail.com\",\r
+
+    \  \"usuario_id\": \"202253882\"\r
+
+    }"
+order: 1778048116627

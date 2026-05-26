@@ -16,6 +16,10 @@ export class Periodo {
   @Column({ unique: true })
   nombre: string = '';
 
+  // Propiedad agregada para solucionar el error del controller
+  @Column({ nullable: true })
+  numero_periodo: number = 0;
+
   @Column({ type: 'date' })
   fecha_inicio: string = '';
 
@@ -36,8 +40,6 @@ export class Periodo {
 
   @BeforeInsert()
   generateId() {
-    // Genera un ID con prefijo PER- para diferenciarlo de alumnos o materias
-    // Formato: PER-XXXXXXXX (8 caracteres aleatorios en mayúsculas)
     const shortId = uuidv4().split('-')[0].toUpperCase();
     this.id = `PER-${shortId}`;
   }

@@ -1,0 +1,5 @@
+$kind: http-request
+name: profesor real
+url: ""
+method: GET
+order: 4503460096284031

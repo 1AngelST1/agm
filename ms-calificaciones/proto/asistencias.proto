@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package asistencias;
+
+service AsistenciasService {
+  rpc GetAsistenciasByAlumno (AsistenciaRequest) returns (AsistenciaResponse) {}
+}
+
+message AsistenciaRequest {
+  string matricula = 1;
+  string nrc = 2;
+}
+
+message AsistenciaResponse {
+  int32 total_asistencias = 1;
+  int32 total_faltas = 2;
+}

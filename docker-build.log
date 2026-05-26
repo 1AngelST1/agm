@@ -1,0 +1,269 @@
+ Image proyecto_final-ms-calificaciones Building 
+ Image proyecto_final-ms-alumnos Building 
+ Image proyecto_final-ms-periodos Building 
+ Image proyecto_final-ms-auth Building 
+ Image proyecto_final-frontend Building 
+ Image proyecto_final-ms-notificaciones Building 
+ Image proyecto_final-ms-asistencias Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.95kB 0.0s done
+#1 DONE 0.0s
+
+#2 [frontend internal] load build definition from Dockerfile
+#2 transferring dockerfile:
+#2 transferring dockerfile: 384B 0.1s done
+#2 DONE 0.2s
+
+#3 [ms-asistencias internal] load build definition from Dockerfile
+#3 transferring dockerfile: 519B 0.0s done
+#3 DONE 0.2s
+
+#4 [ms-auth internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.21kB 0.1s done
+#4 DONE 0.3s
+
+#5 [ms-alumnos internal] load build definition from Dockerfile
+#5 transferring dockerfile: 1.22kB 0.1s done
+#5 DONE 0.3s
+
+#6 [ms-notificaciones internal] load build definition from Dockerfile
+#6 transferring dockerfile: 375B 0.1s done
+#6 DONE 0.3s
+
+#7 [ms-periodos internal] load build definition from Dockerfile
+#7 transferring dockerfile: 380B 0.1s done
+#7 DONE 0.3s
+
+#8 [ms-calificaciones internal] load build definition from Dockerfile
+#8 transferring dockerfile: 1.25kB 0.1s done
+#8 DONE 0.4s
+
+#9 [ms-periodos internal] load metadata for docker.io/library/node:22-alpine
+#9 DONE 2.9s
+
+#10 [ms-alumnos internal] load metadata for docker.io/library/node:20-alpine
+#10 DONE 2.9s
+
+#11 [ms-alumnos internal] load .dockerignore
+#11 transferring context: 2B 0.0s done
+#11 DONE 0.1s
+
+#12 [frontend internal] load .dockerignore
+#12 transferring context: 2B 0.0s done
+#12 DONE 0.1s
+
+#13 [ms-asistencias internal] load metadata for docker.io/library/node:18-alpine
+#13 DONE 3.1s
+
+#11 [ms-asistencias internal] load .dockerignore
+#11 transferring context: 2B 0.0s done
+#11 DONE 0.1s
+
+#14 [ms-auth internal] load build context
+#14 DONE 0.0s
+
+#15 [frontend internal] load build context
+#15 DONE 0.0s
+
+#16 [ms-notificaciones internal] load build context
+#16 DONE 0.0s
+
+#17 [ms-alumnos internal] load build context
+#17 DONE 0.0s
+
+#18 [ms-notificaciones builder 1/6] FROM docker.io/library/node:22-alpine@sha256:968df39aedcea65eeb078fb336ed7191baf48f972b4479711397108be0966920
+#18 resolve docker.io/library/node:22-alpine@sha256:968df39aedcea65eeb078fb336ed7191baf48f972b4479711397108be0966920
+#18 ...
+
+#16 [ms-asistencias internal] load build context
+#16 DONE 0.0s
+
+#19 [ms-calificaciones internal] load build context
+#19 DONE 0.0s
+
+#18 [ms-periodos builder 1/6] FROM docker.io/library/node:22-alpine@sha256:968df39aedcea65eeb078fb336ed7191baf48f972b4479711397108be0966920
+#18 resolve docker.io/library/node:22-alpine@sha256:968df39aedcea65eeb078fb336ed7191baf48f972b4479711397108be0966920 0.2s done
+#18 resolve docker.io/library/node:22-alpine@sha256:968df39aedcea65eeb078fb336ed7191baf48f972b4479711397108be0966920 0.2s done
+#18 DONE 0.2s
+
+#20 [ms-alumnos builder 1/8] FROM docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
+#20 resolve docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 0.2s done
+#20 DONE 0.2s
+
+#21 [frontend builder 2/6] WORKDIR /app
+#21 CACHED
+
+#22 [frontend stage-1 3/4] RUN npm install -g http-server
+#22 CACHED
+
+#23 [ms-asistencias 1/6] FROM docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e
+#23 resolve docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e 0.1s done
+#23 DONE 0.2s
+
+#16 [ms-periodos internal] load build context
+#16 ...
+
+#14 [ms-auth internal] load build context
+#14 transferring context: 9.04kB 0.5s done
+#14 DONE 0.6s
+
+#15 [frontend internal] load build context
+#15 transferring context: 378.22kB 0.5s done
+#15 DONE 0.7s
+
+#24 [ms-calificaciones builder 2/8] WORKDIR /app
+#24 CACHED
+
+#16 [ms-periodos internal] load build context
+#16 ...
+
+#19 [ms-calificaciones internal] load build context
+#19 transferring context: 77.13kB 0.6s done
+#19 DONE 0.7s
+
+#21 [ms-notificaciones builder 2/6] WORKDIR /app
+#21 CACHED
+
+#16 [ms-periodos internal] load build context
+#16 ...
+
+#17 [ms-alumnos internal] load build context
+#17 transferring context: 72.70kB 0.5s done
+#17 DONE 0.8s
+
+#16 [ms-periodos internal] load build context
+#16 ...
+
+#25 [ms-alumnos builder 3/8] COPY ms-alumnos/package*.json ./
+#25 DONE 0.2s
+
+#26 [ms-auth builder 3/8] COPY ms-auth/package*.json ./
+#26 DONE 0.4s
+
+#16 [ms-periodos internal] load build context
+#16 ...
+
+#27 [ms-calificaciones builder 3/8] COPY ms-calificaciones/package*.json ./
+#27 DONE 0.3s
+
+#28 [frontend builder 3/6] COPY package*.json ./
+#28 DONE 0.5s
+
+#16 [ms-periodos internal] load build context
+#16 transferring context: 9.98MB 5.7s
+#16 transferring context: 23.97MB 10.7s
+#16 ...
+
+#29 [ms-alumnos stage-1 4/7] RUN npm install --omit=dev
+#29 ...
+
+#30 [ms-calificaciones stage-1 4/7] RUN npm install --omit=dev
+#30 ...
+
+#31 [ms-calificaciones builder 4/8] RUN npm install
+#31 ...
+
+#32 [ms-alumnos builder 4/8] RUN npm install
+#32 ...
+
+#33 [ms-auth stage-1 4/7] RUN npm install --omit=dev
+#33 ...
+
+#34 [ms-auth builder 4/8] RUN npm install
+#34 ...
+
+#35 [frontend builder 4/6] RUN npm ci
+#35 10.38 npm error code EUSAGE
+#35 10.38 npm error
+#35 10.38 npm error The `npm ci` command can only install with an existing package-lock.json or
+#35 10.38 npm error npm-shrinkwrap.json with lockfileVersion >= 1. Run an install with npm@5 or
+#35 10.38 npm error later to generate a package-lock.json file, then try again.
+#35 10.38 npm error
+#35 10.38 npm error Clean install a project
+#35 10.38 npm error
+#35 10.38 npm error Usage:
+#35 10.38 npm error npm ci
+#35 10.38 npm error
+#35 10.38 npm error Options:
+#35 10.38 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+#35 10.38 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+#35 10.38 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+#35 10.38 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+#35 10.38 npm error [--no-bin-links] [--no-fund] [--dry-run]
+#35 10.38 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+#35 10.38 npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+#35 10.38 npm error
+#35 10.38 npm error aliases: clean-install, ic, install-clean, isntall-clean
+#35 10.38 npm error
+#35 10.38 npm error Run "npm help ci" for more info
+#35 10.39 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-26T04_35_10_497Z-debug-0.log
+#35 ...
+
+#16 [ms-periodos internal] load build context
+#16 ...
+
+#35 [frontend builder 4/6] RUN npm ci
+#35 ERROR: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1
+
+#16 [ms-periodos internal] load build context
+#16 transferring context: 35.41MB 12.9s done
+#16 CANCELED
+
+#34 [ms-auth builder 4/8] RUN npm install
+#34 ...
+
+#33 [ms-auth stage-1 4/7] RUN npm install --omit=dev
+#33 CANCELED
+
+#29 [ms-alumnos stage-1 4/7] RUN npm install --omit=dev
+#29 ...
+
+#30 [ms-calificaciones stage-1 4/7] RUN npm install --omit=dev
+#30 CANCELED
+
+#29 [ms-alumnos stage-1 4/7] RUN npm install --omit=dev
+#29 CANCELED
+
+#34 [ms-auth builder 4/8] RUN npm install
+#34 CANCELED
+
+#31 [ms-calificaciones builder 4/8] RUN npm install
+#31 CANCELED
+
+#32 [ms-alumnos builder 4/8] RUN npm install
+#32 CANCELED
+------
+ > [frontend builder 4/6] RUN npm ci:
+10.38 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+10.38 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+10.38 npm error [--no-bin-links] [--no-fund] [--dry-run]
+10.38 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+10.38 npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+10.38 npm error
+10.38 npm error aliases: clean-install, ic, install-clean, isntall-clean
+10.38 npm error
+10.38 npm error Run "npm help ci" for more info
+10.39 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-26T04_35_10_497Z-debug-0.log
+------
+Dockerfile:8
+
+--------------------
+
+   6 |     COPY package*.json ./
+
+   7 |     
+
+   8 | >>> RUN npm ci
+
+   9 |     
+
+  10 |     COPY . .
+
+--------------------
+
+target frontend: failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1
+
+
+
+View build details: docker-desktop://dashboard/build/default/default/46tbnsvtz51m51y9ym95tsh5r
+

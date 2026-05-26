@@ -1,9 +1,5 @@
-/**
- * 📨 RabbitMQ Listener - Consumidor de eventos para ms-notificaciones
-<<<<<<< HEAD
-=======
- * Part 9: Incluye Dead Letter Queue (DLQ) listener para manejo de errores
->>>>>>> dev2
+/** 
+  RabbitMQ Listener - Consumidor de eventos para ms-notificaciones
  */
 
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
@@ -11,8 +7,6 @@ import * as amqp from 'amqplib';
 import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import { AlumnoInscritoEvent, CalificacionFinalAsignadaEvent, AsistenciaResumenCalculadoEvent, InscripcionRechazadaEvent, MateriaCargaLlenaEvent } from '@shared/events.types';
 
-<<<<<<< HEAD
-=======
 interface DLQMessage {
   originalRoutingKey: string;
   payload: any;
@@ -21,7 +15,6 @@ interface DLQMessage {
   retriesExhausted: boolean;
 }
 
->>>>>>> dev2
 @Injectable()
 export class RabbitMQListener implements OnModuleInit {
   private logger = new Logger('RabbitMQListener');
@@ -40,8 +33,8 @@ export class RabbitMQListener implements OnModuleInit {
 
   private async connect() {
     try {
-      this.connection = await amqp.connect(RABBITMQ_CONFIG.url);
-      this.channel = await this.connection!.createChannel();
+      this.connection = (await amqp.connect(RABBITMQ_CONFIG.url)) as any;
+      this.channel = await (this.connection as any).createChannel();
 
       await this.channel!.assertExchange(
         RABBITMQ_EXCHANGE,
@@ -126,12 +119,9 @@ export class RabbitMQListener implements OnModuleInit {
       });
 
       this.logger.log(`✅ Escuchando en queue: ${RABBITMQ_QUEUES.NOTIFICACIONES}`);
-<<<<<<< HEAD
-=======
 
       // Part 9: Configurar Dead Letter Queue listener
       await this.setupDLQListener();
->>>>>>> dev2
     } catch (error) {
       this.logger.error('❌ Error configurando listeners:', error);
       throw error;
@@ -172,7 +162,7 @@ export class RabbitMQListener implements OnModuleInit {
       // 2. Notificar sobre estado de aprobación/reprobación
       // 3. Si fue rechazado, informar sobre derechos de reposición
 
-      const estado = event.estatus === 'Aprobado' ? '✅ Aprobado' : '❌ Reprobado';
+      const estado = event.estatus === 'aprobado' ? '✅ Aprobado' : '❌ Reprobado';
       this.logger.log(
         `📧 Calificación ${event.calificacion_final} - ${estado} enviada a ${event.matricula}`
       );
@@ -258,8 +248,6 @@ export class RabbitMQListener implements OnModuleInit {
       this.logger.error('❌ Error procesando materia.carga.llena:', error);
     }
   }
-<<<<<<< HEAD
-=======
 
   /**
    * 💀 Part 9: Configurar Dead Letter Queue listener
@@ -334,5 +322,4 @@ export class RabbitMQListener implements OnModuleInit {
       this.logger.error('❌ Error manejando Dead Letter:', error);
     }
   }
->>>>>>> dev2
 }

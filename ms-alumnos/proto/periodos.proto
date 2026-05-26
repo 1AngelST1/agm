@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package periodos;
+
+service PeriodosService {
+  rpc GetPeriodoActivo (Empty) returns (PeriodoResponse) {}
+  rpc GetMateriaById (MateriaRequest) returns (MateriaResponse) {}
+}
+
+message Empty {}
+
+message PeriodoResponse {
+  string id = 1;
+  string nombre = 2;
+  string fecha_inicio = 3;
+  string fecha_fin = 4;
+  string plan_estudios = 5;
+  bool activo = 6;
+}
+
+message MateriaRequest {
+  string nrc = 1;
+}
+
+message MateriaResponse {
+  string clave = 1;
+  string nombre = 2;
+  float creditos = 3;
+}

@@ -1,0 +1,20 @@
+$kind: http-request
+name: actualizacion de calificacion test
+url: http://localhost:3004/notificaciones/test/actualizacion
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nombreAlumno\": \"Angel Sarmiento\",\r
+
+    \  \"nombreMateria\": \"ITIS 260 - Servicios Web\",\r
+
+    \  \"emailDestino\": \"angel.sarmientot@alumno.buap.mx\",\r
+
+    \  \"calificacion_anterior\": 80,\r
+
+    \  \"calificacion_nueva\": 92\r
+
+    }"
+order: 3614772432915213

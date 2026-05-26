@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package notificaciones;
+
+service NotificacionesService {
+  rpc SendBienvenida (NotificacionRequest) returns (NotificacionResponse) {}
+  rpc SendBajaNotif (NotificacionRequest) returns (NotificacionResponse) {}
+  rpc SendActualizacion (ActualizacionRequest) returns (NotificacionResponse) {}
+  rpc SendResetPassword (ResetPasswordRequest) returns (NotificacionResponse) {}
+}
+
+message NotificacionRequest {
+  string usuario_id = 1;
+  string matricula = 2;
+  string nombre_alumno = 3;
+  string materia_id = 4;
+  string nombre_materia = 5;
+  string nombre_profesor = 6;
+  string email_destino = 7;
+  string materia = 8;
+}
+
+message ActualizacionRequest {
+  string usuario_id = 1;
+  string matricula = 2;
+  string materia_id = 3;
+  string nombre_materia = 4;
+  string email_destino = 5;
+  float nueva_nota = 6;
+  float calificacion_anterior = 7;
+  float calificacion_nueva = 8;
+  string materia = 9;
+  string nombre_alumno = 10;
+  string tipo_calificacion = 11;  // 'examen', 'tarea', 'proyecto', 'final'
+}
+
+message NotificacionResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ResetPasswordRequest {
+  string email_destino = 1;
+  string reset_link = 2;
+  string nombre_usuario = 3;
+}

@@ -1,0 +1,5 @@
+$kind: http-request
+name: get prueba de alumno (ID)
+url: http://localhost:3002/alumnos/070525
+method: GET
+order: 4053001267867173

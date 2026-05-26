@@ -324,6 +324,8 @@ export class AppController implements OnModuleInit {
       calificacion_final: body.calificacion_final,
       derecho_proyecto: body.derecho_proyecto,
       estatus: calificacion.estatus,
+      fecha_asignacion: new Date(),
+      asignado_por: 'Sistema',
     };
 
     await this.rabbitmqService.publishEvent(

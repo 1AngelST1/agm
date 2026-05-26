@@ -1,0 +1,5 @@
+$kind: http-request
+name: New Request
+url: http://localhost:3003/calificaciones/kardex/202253882
+method: GET
+order: 4503534755070577

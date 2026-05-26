@@ -1,0 +1,5 @@
+$kind: http-request
+name: activar el perido
+url: http://localhost:3001/periodos/PER-2E9046D0/activar
+method: PUT
+order: 4150569693066321

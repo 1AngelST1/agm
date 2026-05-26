@@ -1,0 +1,16 @@
+$kind: http-request
+name: crear el acceso en auth creacion de alumno
+url: http://localhost:3000/auth/crear
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"angel sarmiento totolhua\",\r
+
+    \  \"email\": \"angel.sarmientot@alumno.buap.mx\",\r
+
+    \  \"password\": \"070525\"\r
+
+    }"
+order: 3432050044291857

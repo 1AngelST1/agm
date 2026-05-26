@@ -1,0 +1,237 @@
+services:
+  # 1. Base de datos Relacional (PostgreSQL) - Para Auth, Periodos, Alumnos, Calificaciones, Reportes
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: agm_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+    volumes:
+      - ./init-dbs.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 2. Base de datos Documental (MongoDB) - Para Notificaciones
+  mongo-db:
+    image: mongo:6
+    container_name: agm_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 3. Caché en Memoria (Redis) - Para el módulo de Asistencias QR en tiempo real
+  redis-cache:
+    image: redis:7-alpine
+    container_name: agm_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 3.5. Message Broker (RabbitMQ) - Para comunicación asíncrona entre microservicios
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: agm_rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI (usuario: guest, contraseña: guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: agm_user
+      RABBITMQ_DEFAULT_PASS: agm_password
+      RABBITMQ_DEFAULT_VHOST: /agm
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # 4. Microservicio de Autenticación y Usuarios
+  ms-auth:
+    build:
+      context: .
+      dockerfile: ./ms-auth/Dockerfile
+    container_name: agm_ms_auth
+    ports:
+      - "3000:3000"  # REST API
+      - "5000:5000"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_auth_db
+      - JWT_SECRET=AGM-AST
+      - JWT_EXPIRATION=3600
+      - GRPC_PORT=5000
+      - REST_PORT=3000
+    depends_on:
+      - postgres-db
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 5. Microservicio de Alumnos
+  ms-alumnos:
+    build:
+      context: .
+      dockerfile: ./ms-alumnos/Dockerfile
+    container_name: agm_ms_alumnos
+    ports:
+      - "3002:3002"  # REST API
+      - "5002:5002"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_alumnos_db
+      - AUTH_GRPC_HOST=ms-auth
+      - AUTH_GRPC_PORT=5000
+      - GRPC_PORT=5002
+      - REST_PORT=3002
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - postgres-db
+      - ms-auth
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+volumes:
+  pgdata:
+  mongodata:
+  rabbitmq_data:
+
+networks:
+  agm-network:
+    driver: bridge
+  
+# 6. Microservicio de Asistencias (Conexión a Postgres y Redis)
+  ms-asistencias:
+    build:
+      context: .
+      dockerfile: ./ms-asistencias/Dockerfile
+    container_name: agm_ms_asistencias
+    ports:
+      - "3005:3005"  # REST API
+      - "5005:5005"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_asistencias_db
+      - REDIS_HOST=redis-cache
+      - REDIS_PORT=6379
+      - AUTH_GRPC_URL=ms-auth:5000
+      - PORT=3005
+      - GRPC_PORT=5005
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - postgres-db
+      - redis-cache
+      - ms-auth
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 7. Microservicio de Calificaciones
+  ms-calificaciones:
+    build:
+      context: .
+      dockerfile: ./ms-calificaciones/Dockerfile
+    container_name: agm_ms_calificaciones
+    ports:
+      - "3003:3003"  # REST API
+      - "5003:5003"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_calificaciones_db
+      - AUTH_GRPC_URL=ms-auth:5000
+      - PORT=3003
+      - GRPC_PORT=5003
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - postgres-db
+      - ms-auth
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 8. Microservicio de Periodos
+  ms-periodos:
+    build:
+      context: .
+      dockerfile: ./ms-periodos/Dockerfile
+    container_name: agm_ms_periodos
+    ports:
+      - "3004:3004"  # REST API
+      - "5004:5004"  # gRPC
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_periodos_db
+      - AUTH_GRPC_URL=ms-auth:5000
+      - PORT=3004
+      - GRPC_PORT=5004
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - postgres-db
+      - ms-auth
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+  # 9. Microservicio de Notificaciones
+  ms-notificaciones:
+    build:
+      context: .
+      dockerfile: ./ms-notificaciones/Dockerfile
+    container_name: agm_ms_notificaciones
+    ports:
+      - "3006:3006"  # REST API
+    environment:
+      - DB_HOST=mongo-db
+      - DB_PORT=27017
+      - DB_NAME=agm_notificaciones_db
+      - PORT=3006
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672/agm
+    depends_on:
+      - mongo-db
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - agm-network
+
+volumes:
+  pgdata:
+  mongodata:
+  rabbitmq_data:
+
+networks:
+  agm-network:
+    driver: bridge
+      - agm-network

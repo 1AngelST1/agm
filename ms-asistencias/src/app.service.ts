@@ -77,7 +77,8 @@ export class AppService {
         matricula: matricula,
         nrc_materia: nrc_materia,
         estado: 'presente',
-        fecha_registro: new Date(),
+        timestamp: new Date(),
+        qr_token: token_qr, // <-- CORRECCIÓN: Faltaba enviar el token
       };
 
       await rabbitmqService.publishEvent(
@@ -154,7 +155,7 @@ export class AppService {
       }
 
       // Procesar cada alumno
-      const resultados = [];
+      const resultados: any[] = []; // <-- CORRECCIÓN: Tipado explícito para evitar error "never[]"
       const totalClases = Object.values(alumnosPorMatricula).length > 0
         ? Math.max(...Object.values(alumnosPorMatricula).map(a => a.length))
         : 1;
@@ -179,6 +180,7 @@ export class AppService {
           faltas,
           porcentaje_asistencia,
           derecho_proyecto: porcentaje_asistencia >= 80,
+          fecha_calculo: new Date(),
         };
 
         // Publicar evento de resumen
@@ -193,8 +195,9 @@ export class AppService {
             alumno_id: matricula,
             matricula,
             nrc_materia,
-            motivo: 'Asistencia insuficiente',
+            motivo: 'asistencia_baja',
             porcentaje_asistencia,
+            fecha_evento: new Date(), // <-- CORRECCIÓN: Faltaba la fecha
           };
 
           await rabbitmqService.publishEvent(
@@ -212,7 +215,7 @@ export class AppService {
           total_clases: totalClases,
           asistencias: asistencias_count,
           faltas,
-          porcentaje: `${porcentaje_asistencia}%`,
+          porcentaje_asistencia, // <-- CORRECCIÓN: Enviarlo como número en vez de string
           derecho_proyecto: porcentaje_asistencia >= 80,
         });
       }

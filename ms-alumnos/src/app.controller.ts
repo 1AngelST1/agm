@@ -29,7 +29,7 @@ import { JwtAuthGuard } from './guards/jwt-auth-grpc.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RabbitMQService } from './rabbitmq.service';
-import { AlumnoInscritoEvent, AlumnoDesinscrutoEvent, InscripcionRechazadaEvent, MateriaCargaLlenaEvent } from '@shared/events.types';
+import { AlumnoInscritoEvent, AlumnoDesinscritoEvent, InscripcionRechazadaEvent, MateriaCargaLlenaEvent } from '@shared/events.types';
 import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import * as crypto from 'crypto';
 

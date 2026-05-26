@@ -1,0 +1,24 @@
+$kind: http-request
+name: crear materia
+url: http://localhost:3001/periodos/materia
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nrc\": \"50130\",\r
+
+    \  \"clave\": \"ITIS 260\",\r
+
+    \  \"nombre\": \"Servicios Web\",\r
+
+    \  \"seccion\": \"001\",\r
+
+    \  \"periodoId\": \"PER-AD598C95\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZjE2ZWFmNWMiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzkwMDAwMTYsImV4cCI6MTc3OTAwNzIxNn0.dqzVNktV76FL0x9JJkcK99a47e2H-X9r4mcL2DHK-Jo
+order: 1778464457611

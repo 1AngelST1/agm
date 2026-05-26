@@ -1,0 +1,5 @@
+$kind: http-request
+name: prueba general de auth
+url: http://localhost:3001/auth
+method: GET
+order: 1776629120448

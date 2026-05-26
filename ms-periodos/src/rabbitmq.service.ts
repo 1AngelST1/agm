@@ -1,26 +1,16 @@
 /**
-<<<<<<< HEAD
- * 📨 Módulo RabbitMQ - Servicio para publicar eventos
- * Se usa en todos los microservicios que necesitan publicar eventos
-=======
  * 📨 Módulo RabbitMQ - Servicio para publicar eventos con retry logic
  * Part 9: Error Handling mejorado con exponential backoff y DLQ
->>>>>>> dev2
  */
 
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-<<<<<<< HEAD
-import { RABBITMQ_EXCHANGE, RABBITMQ_CONFIG } from '@shared/rabbitmq.constants';
-
-export interface RabbitMQEventPayload {
-  [key: string]: any;
-=======
 import { 
-  RABBITMQ_EXCHANGE, 
   RABBITMQ_CONFIG, 
+  RABBITMQ_EXCHANGE, 
+  RABBITMQ_QUEUES, 
   RABBITMQ_RETRY_CONFIG,
-  RABBITMQ_QUEUES 
+  RABBITMQ_ROUTING_KEYS 
 } from '@shared/rabbitmq.constants';
 
 export interface RabbitMQEventPayload {
@@ -34,7 +24,6 @@ interface PublishOptions {
   maxRetries?: number;
   retryDelayMs?: number;
   exponentialBackoff?: boolean;
->>>>>>> dev2
 }
 
 @Injectable()
@@ -42,23 +31,15 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   private logger = new Logger('RabbitMQService');
   private connection: amqp.Connection | null = null;
   private channel: amqp.Channel | null = null;
-<<<<<<< HEAD
-=======
   private dlxChannel: amqp.Channel | null = null;
->>>>>>> dev2
 
   async onModuleInit() {
     try {
       await this.connect();
-<<<<<<< HEAD
-    } catch (error) {
-      this.logger.error('❌ Error conectando a RabbitMQ:', error);
-=======
       await this.setupDeadLetterExchange();
     } catch (error) {
       this.logger.error('❌ Error conectando a RabbitMQ:', error);
       // Reintentar conexión después de 5 segundos
->>>>>>> dev2
       setTimeout(() => this.onModuleInit(), 5000);
     }
   }
@@ -67,53 +48,30 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     await this.disconnect();
   }
 
-<<<<<<< HEAD
-=======
   /**
    * 🔌 Conectar a RabbitMQ
    */
->>>>>>> dev2
   private async connect() {
     try {
-      this.connection = await amqp.connect(RABBITMQ_CONFIG.url);
-      this.channel = await this.connection!.createChannel();
+      this.connection = (await amqp.connect(RABBITMQ_CONFIG.url)) as any;
+      this.channel = await (this.connection as any).createChannel();
 
-<<<<<<< HEAD
-=======
       // Crear exchange si no existe
->>>>>>> dev2
       await this.channel!.assertExchange(
         RABBITMQ_EXCHANGE,
         RABBITMQ_CONFIG.exchange.type,
         { durable: RABBITMQ_CONFIG.exchange.durable }
       );
 
-<<<<<<< HEAD
-      this.logger.log(`✅ Conectado a RabbitMQ en ${RABBITMQ_CONFIG.url}`);
-=======
       this.logger.log(
         `✅ Conectado a RabbitMQ en ${RABBITMQ_CONFIG.url}`
       );
->>>>>>> dev2
     } catch (error) {
       this.logger.error('❌ No se pudo conectar a RabbitMQ:', error);
       throw error;
     }
   }
 
-<<<<<<< HEAD
-  async publishEvent(routingKey: string, payload: RabbitMQEventPayload): Promise<void> {
-    if (!this.channel) {
-      this.logger.warn('⚠️ Canal no disponible, intentando reconectar...');
-      await this.connect();
-    }
-
-    try {
-      const message = Buffer.from(JSON.stringify(payload));
-      this.channel!.publish(
-        RABBITMQ_EXCHANGE,
-        routingKey,
-=======
   /**
    * 💀 Configurar Dead Letter Exchange (DLX)
    * Part 9: Dead Letter Queue para mensajes fallidos
@@ -287,21 +245,10 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
       // Enviar directamente a la DLQ
       this.channel!.sendToQueue(
         RABBITMQ_QUEUES.DEAD_LETTER,
->>>>>>> dev2
         message,
         { persistent: true }
       );
 
-<<<<<<< HEAD
-      this.logger.log(`📤 Evento publicado: ${routingKey}`);
-      return;
-    } catch (error) {
-      this.logger.error(`❌ Error publicando evento ${routingKey}:`, error);
-      throw error;
-    }
-  }
-
-=======
       this.logger.log(
         `💀 Mensaje enviado a DLQ: ${RABBITMQ_QUEUES.DEAD_LETTER} ` +
         `(routingKey: ${routingKey})`
@@ -321,14 +268,13 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   /**
    * 🔌 Desconectar de RabbitMQ
    */
->>>>>>> dev2
   private async disconnect() {
     try {
       if (this.channel) {
         await this.channel.close();
       }
       if (this.connection) {
-        await this.connection.close();
+        await (this.connection as any).close();
       }
       this.logger.log('✅ Desconectado de RabbitMQ');
     } catch (error) {
@@ -336,12 +282,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-<<<<<<< HEAD
-=======
   /**
    * 🏥 Verificar si está conectado
    */
->>>>>>> dev2
   isConnected(): boolean {
     return this.connection !== null && this.channel !== null;
   }

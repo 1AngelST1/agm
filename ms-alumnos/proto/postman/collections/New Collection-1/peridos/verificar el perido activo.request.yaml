@@ -1,0 +1,5 @@
+$kind: http-request
+name: verificar el perido activo
+url: http://localhost:3001/periodos/activo
+method: GET
+order: 4222003904059934

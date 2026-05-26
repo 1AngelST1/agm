@@ -1,0 +1,14 @@
+$kind: http-request
+name: obtener el token JWT (login) admin
+url: http://localhost:3000/auth/login
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"email\": \"admin@admin.buap.mx\",\r
+
+    \  \"password\": \"passwordSeguro123\"\r
+
+    }"
+order: 2383018273091995

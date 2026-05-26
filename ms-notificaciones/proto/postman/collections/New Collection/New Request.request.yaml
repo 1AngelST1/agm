@@ -1,0 +1,14 @@
+$kind: http-request
+name: New Request
+url: http://localhost:3001/auth/crear
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"Angel Sarmiento\",\r
+
+    \  \"email\": \"angel@uni.mx\"\r
+
+    }"
+order: 3814939856698499

@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package calificaciones;
+
+service CalificacionesService {
+  rpc GetCalificacionesByMatricula(GetCalificacionesRequest) returns (CalificacionesResponse);
+  rpc CreateCalificacion(CreateCalificacionRequest) returns (CalificacionResponse);
+}
+
+message GetCalificacionesRequest {
+  string matricula = 1;
+}
+
+message CalificacionesResponse {
+  repeated CalificacionResponse calificaciones = 1;
+}
+
+message CreateCalificacionRequest {
+  string nrc_grupo = 1;
+  string matricula_alumno = 2;
+  float calificacion_ordinaria = 3;
+  string estatus = 4;
+}
+
+message CalificacionResponse {
+  string id = 1;
+  string nrc_grupo = 2;
+  string matricula_alumno = 3;
+  float calificacion_ordinaria = 4;
+  string estatus = 5;
+}
+
+message Materia {
+  string clave = 1;
+  string nombre = 2;
+  float creditos = 3;
+}
+
+message Grupo {
+  string nrc = 1;
+  Materia materia = 2;
+  string docente_id = 3;
+  string seccion = 4;
+  string periodo = 5;
+}

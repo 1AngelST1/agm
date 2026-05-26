@@ -1,0 +1,9 @@
+$kind: http-request
+name: concentrado de calificaciones
+url: http://localhost:3003/calificaciones/concentrado/50130
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfOGJmNWM2NGQiLCJlbWFpbCI6Imp1YW4ucGVyZXpAY29ycmVvLmJ1YXAubXgiLCJyb2xlIjoiZG9jZW50ZSIsImlhdCI6MTc3OTEwMjI4OSwiZXhwIjoxNzc5MTA5NDg5fQ.RV-R9qe8sJPIWRbkk4PLfqfZUdvjIxIUzWIQqFsn6Qo
+order: 4458670475857502

@@ -19,7 +19,7 @@ import { RolesGuard } from './guards/roles.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RabbitMQService } from './rabbitmq.service';
-import { PeriodoIniciado, PeriodoCerradoEvent } from '@shared/events.types';
+import { PeriodoIniciadoEvent, PeriodoFinalizadoEvent } from '@shared/events.types';
 import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 
 // Definimos una interfaz para tipar los datos entrantes de gRPC y evitar el uso de 'any'
@@ -234,7 +234,7 @@ export class AppController {
     };
 
     await this.rabbitmqService.publishEvent(
-      RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO,
+      RABBITMQ_ROUTING_KEYS.PERIODO_FINALIZADO,
       evento,
     );
 

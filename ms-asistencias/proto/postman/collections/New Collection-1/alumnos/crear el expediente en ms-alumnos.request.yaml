@@ -1,0 +1,20 @@
+$kind: http-request
+name: crear el expediente en ms-alumnos
+url: http://localhost:3002/alumnos/crear
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"user_id\": \"usr_6b18d76c\",\r
+
+    \  \"matricula\": \"202253882\",\r
+
+    \  \"carrera\": \"Ingeniería en Tecnologías de la Información\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZjE2ZWFmNWMiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Nzg5OTI1MjEsImV4cCI6MTc3ODk5OTcyMX0.Fz5vvLYhNuuKC8Pwc2Rqx8KQkrJMIiqkxcS8Lf2pUHs
+order: 4047972216066182

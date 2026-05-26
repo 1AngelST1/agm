@@ -1,0 +1,16 @@
+$kind: http-request
+name: test bienvenuda
+url: http://localhost:3004/notificaciones/test/bienvenida
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nombreAlumno\": \"Angel Sarmiento\",\r
+
+    \  \"nombreMateria\": \"ITIS 260 - Servicios Web\",\r
+
+    \  \"emailDestino\": \"angel.sarmientot@alumno.buap.mx\"\r
+
+    }"
+order: 4202433071658652

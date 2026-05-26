@@ -1,49 +1,46 @@
 import {
   Entity,
-  Column,
   PrimaryColumn,
-  ManyToOne,
-  JoinColumn,
+  Column,
   CreateDateColumn,
   UpdateDateColumn,
+  BeforeInsert,
 } from 'typeorm';
-import { Grupo } from './grupo.entity';
-import { Actividad } from './actividad.entity';
+import { v4 as uuidv4 } from 'uuid';
 
-@Entity('calificaciones')
-export class Calificacion {
+@Entity('periodos')
+export class Periodo {
   @PrimaryColumn()
-  matricula_alumno!: string; // Ej. '202253882' (Llave primaria 1)
+  id: string = '';
 
-  @PrimaryColumn()
-  nrc_grupo!: string; // Ej. '50130' (Llave primaria 2)
+  @Column({ unique: true })
+  nombre: string = '';
 
-  @ManyToOne(() => Grupo)
-  @JoinColumn({ name: 'nrc_grupo' })
-  grupo!: Grupo;
-
+  // Propiedad agregada para solucionar el error del controller
   @Column({ nullable: true })
-  actividad_id?: string; // FK opcional a Actividad (para calificaciones por actividad)
+  numero_periodo: number = 0;
 
-  @ManyToOne(() => Actividad, { nullable: true })
-  @JoinColumn({ name: 'actividad_id' })
-  actividad?: Actividad;
+  @Column({ type: 'date' })
+  fecha_inicio: string = '';
 
-  @Column('decimal', { precision: 4, scale: 2, nullable: true })
-  calificacion_ordinaria!: number; // Ej. 8.50
+  @Column({ type: 'date' })
+  fecha_fin: string = '';
 
-  @Column({ nullable: true })
-  tipo_calificacion?: 'examen' | 'tarea' | 'proyecto'; // Para categorizar
+  @Column()
+  plan_estudios: string = '';
 
-  @Column({ default: 'Cursando' })
-  estatus!: string; // Cursando, Aprobado, Reprobado
+  @Column({ default: false })
+  activo: boolean = false;
 
   @CreateDateColumn()
-  created_at!: Date;
+  creado_en: Date = new Date();
 
   @UpdateDateColumn()
-  updated_at!: Date;
+  actualizado_en: Date = new Date();
 
-  // ✨ Un alumno solo puede tener UNA calificación por grupo (PK compuesta)
-  // Ahora soporta múltiples calificaciones si tienen diferentes actividades
+  @BeforeInsert()
+  generateId() {
+    const shortId = uuidv4().split('-')[0].toUpperCase();
+    this.id = `PER-${shortId}`;
+  }
 }

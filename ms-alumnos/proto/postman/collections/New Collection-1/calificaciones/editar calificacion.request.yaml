@@ -1,0 +1,16 @@
+$kind: http-request
+name: editar calificacion
+url: http://localhost:3003/calificaciones/50130/202253882
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"calificacion_ordinaria\": 4\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZjE2ZWFmNWMiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzkxMjQ5NDgsImV4cCI6MTc3OTEzMjE0OH0.1S8WlEa035Yo8pVAA4FDMtWkp1Lw07Ezii5rEsfpP3Q
+order: 4319376319142620

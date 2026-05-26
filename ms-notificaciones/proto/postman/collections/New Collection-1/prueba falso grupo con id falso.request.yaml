@@ -1,0 +1,20 @@
+$kind: http-request
+name: prueba falso grupo con id falso
+url: http://localhost:3003/calificaciones/grupo
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nrc\": \"50131\",\r
+
+    \  \"materia_clave\": \"ITIS 260\",\r
+
+    \  \"docente_id\": \"usr_hacker_falso_999\", \r
+
+    \  \"seccion\": \"002\",\r
+
+    \  \"periodo\": \"Primavera 2026\"\r
+
+    }"
+order: 4503167918520576

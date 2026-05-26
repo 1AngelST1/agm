@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package alumnos;
+
+service AlumnosService {
+  rpc GetAlumnoByMatricula (AlumnoMatriculaRequest) returns (AlumnoResponse);
+  rpc GetAlumnoByUserId (AlumnoUserIdRequest) returns (AlumnoResponse);
+}
+
+message AlumnoMatriculaRequest {
+  string matricula = 1;
+}
+
+message AlumnoUserIdRequest {
+  string user_id = 1;
+}
+
+message AlumnoResponse {
+  // 🔥 Usamos camelCase aquí para coincidir con nuestro truco en el controlador
+  string alumnoId = 1;
+  string nombre = 2;
+  string matricula = 3;
+  string userId = 4;
+  string carrera = 5;
+}

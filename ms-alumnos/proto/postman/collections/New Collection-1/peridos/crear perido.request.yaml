@@ -1,0 +1,22 @@
+$kind: http-request
+name: crear perido
+url: http://localhost:3001/periodos
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nombre\": \"Primavera 2026\",\r
+
+    \  \"fecha_inicio\": \"2026-01-10\",\r
+
+    \  \"fecha_fin\": \"2026-06-15\",\r
+
+    \  \"plan_estudios\": \"ITI-2020\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfZjE2ZWFmNWMiLCJlbWFpbCI6ImFkbWluQGFkbWluLmJ1YXAubXgiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Nzg5OTI1MjEsImV4cCI6MTc3ODk5OTcyMX0.Fz5vvLYhNuuKC8Pwc2Rqx8KQkrJMIiqkxcS8Lf2pUHs
+order: 1778458401080

@@ -1,0 +1,18 @@
+$kind: http-request
+name: baja de materia
+url: http://localhost:3004/notificaciones/test/baja
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nombreAlumno\": \"Angel Sarmiento\",\r
+
+    \  \"nombreMateria\": \"ITIS 260 - Servicios Web\",\r
+
+    \  \"emailDestino\": \"angel.sarmientot@alumno.buap.mx\"\r
+
+    }"
+auth:
+  type: noauth
+order: 3544676167371456

@@ -4,8 +4,8 @@
 
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
-import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent, PeriodoIniciado, PeriodoCerradoEvent } from '@shared/events.types';
+import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '../../../shared/rabbitmq.constants';
+import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent, PeriodoIniciado, PeriodoCerradoEvent } from '../../../shared/events.types';
 import { AppController } from './app.controller';
 
 @Injectable()
@@ -28,8 +28,8 @@ export class RabbitMQListener implements OnModuleInit {
 
   private async connect() {
     try {
-      this.connection = await amqp.connect(RABBITMQ_CONFIG.url);
-      this.channel = await this.connection!.createChannel();
+      this.connection = (await amqp.connect(RABBITMQ_CONFIG.url)) as any;
+      this.channel = (await this.connection!.createChannel()) as any;
 
       await this.channel!.assertExchange(
         RABBITMQ_EXCHANGE,

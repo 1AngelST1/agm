@@ -1,0 +1,14 @@
+$kind: http-request
+name: docente inicio
+url: http://localhost:3000/auth/login
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"email\": \"juan.perez@correo.buap.mx\",\r
+
+    \  \"password\": \"Profe123\"\r
+
+    }"
+order: 4299888236583759
