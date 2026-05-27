@@ -47,7 +47,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: agm_user
       RABBITMQ_DEFAULT_PASS: agm_password
-      RABBITMQ_DEFAULT_VHOST: /agm
+      RABBITMQ_DEFAULT_VHOST:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: unless-stopped
@@ -81,6 +81,8 @@ services:
     depends_on:
       postgres-db:
         condition: service_started
+    volumes:                    
+      - ./proto:/proto
     restart: unless-stopped
     networks:
       - agm-network
@@ -112,6 +114,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+    volumes:               
+      - ./proto:/proto
     restart: unless-stopped
     networks:
       - agm-network
@@ -146,6 +150,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+    volumes:               
+      - ./proto:/proto
     restart: unless-stopped
     networks:
       - agm-network
@@ -176,6 +182,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+    volumes:               
+      - ./proto:/proto
     restart: unless-stopped
     networks:
       - agm-network
@@ -206,6 +214,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+    volumes:               
+      - ./proto:/proto
     restart: unless-stopped
     networks:
       - agm-network
@@ -229,6 +239,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+    volumes:
+      - ./proto:/proto
     restart: unless-stopped
     networks:
       - agm-network

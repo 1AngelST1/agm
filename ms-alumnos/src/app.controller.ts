@@ -433,10 +433,11 @@ export class AppController implements OnModuleInit {
     await this.inscripcionRepository.save(inscripcion);
 
     // 📤 Publicar evento alumno.desinscrito
-    const evento: AlumnoDesinscrutoEvent = {
+    const evento: AlumnoDesinscritoEvent = {
       alumno_id: matricula,
       matricula: matricula,
       nrc_materia: nrc,
+      motivo: 'baja_solicitada',
       fecha_desinscripcion: new Date(),
     };
 

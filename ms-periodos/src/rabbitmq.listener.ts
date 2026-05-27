@@ -4,8 +4,8 @@
 
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/';'
-import { CalificacionFinalAsignadaEvent } from '@shared/;
+import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
+import { CalificacionFinalAsignadaEvent } from '@shared/events.types';
 
 @Injectable()
 export class RabbitMQListener implements OnModuleInit {

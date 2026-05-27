@@ -4,8 +4,8 @@
 
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '../../../shared/rabbitmq.constants';
-import { AlumnoInscritoEvent, PeriodoIniciado, PeriodoCerradoEvent } from '../../../shared/events.types';
+import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
+import { AlumnoInscritoEvent, PeriodoIniciadoEvent, PeriodoFinalizadoEvent } from '@shared/events.types';
 import { AppService } from './app.service';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class RabbitMQListener implements OnModuleInit {
   private async connect() {
     try {
       this.connection = (await amqp.connect(RABBITMQ_CONFIG.url)) as any;
-      this.channel = (await this.connection!.createChannel()) as any;
+      this.channel = await (this.connection as any).createChannel();
 
       // Crear exchange
       await this.channel!.assertExchange(
@@ -76,7 +76,7 @@ export class RabbitMQListener implements OnModuleInit {
       await this.channel!.bindQueue(
         RABBITMQ_QUEUES.ASISTENCIAS,
         RABBITMQ_EXCHANGE,
-        RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO
+        RABBITMQ_ROUTING_KEYS.PERIODO_FINALIZADO
       );
 
       // Consumir mensajes
@@ -94,9 +94,9 @@ export class RabbitMQListener implements OnModuleInit {
               // Aquí se puede manejar la desinscripción
               this.logger.log(`👋 Alumno desinscrito: ${content.matricula}`);
             } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_INICIADO) {
-              this.logger.log(`📅 Período iniciado: ${content.numero_periodo}`);
-            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO) {
-              this.logger.log(`📅 Período cerrado: ${content.numero_periodo}`);
+              this.logger.log(`📅 Período iniciado: ${content.nombre}`);
+            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_FINALIZADO) {
+              this.logger.log(`📅 Período finalizado: ${content.nombre}`);
             }
 
             // ACK: Confirmar que procesamos el mensaje

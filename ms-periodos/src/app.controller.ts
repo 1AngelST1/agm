@@ -189,11 +189,12 @@ export class AppController {
     }
 
     // 📤 Publicar evento periodo.iniciado
-    const evento: PeriodoIniciado = {
+    const evento: PeriodoIniciadoEvent = {
       periodo_id: periodo.id,
-      numero_periodo: periodo.numero_periodo,
-      fecha_inicio: periodo.fecha_inicio,
-      fecha_fin: periodo.fecha_fin,
+      nombre: periodo.nombre,
+      fecha_inicio: new Date(periodo.fecha_inicio),
+      fecha_fin: new Date(periodo.fecha_fin),
+      estado: 'activo'
     };
 
     await this.rabbitmqService.publishEvent(
@@ -201,11 +202,11 @@ export class AppController {
       evento,
     );
 
-    this.logger.log(`📤 Evento periodo.iniciado publicado para período ${periodo.numero_periodo}`);
+    this.logger.log(`📤 Evento periodo.iniciado publicado para período ${periodo.nombre}`);
 
     return {
       mensaje: 'Período iniciado correctamente',
-      periodo: periodo.numero_periodo,
+      periodo: periodo.nombre,
     };
   }
 
@@ -225,11 +226,9 @@ export class AppController {
     }
 
     // 📤 Publicar evento periodo.cerrado
-    const evento: PeriodoCerradoEvent = {
+    const evento: PeriodoFinalizadoEvent = {
       periodo_id: periodo.id,
-      numero_periodo: periodo.numero_periodo,
-      fecha_inicio: periodo.fecha_inicio,
-      fecha_fin: periodo.fecha_fin,
+      nombre: periodo.nombre,
       fecha_cierre: new Date(),
     };
 
@@ -238,11 +237,11 @@ export class AppController {
       evento,
     );
 
-    this.logger.log(`📤 Evento periodo.cerrado publicado para período ${periodo.numero_periodo}`);
+    this.logger.log(`📤 Evento periodo.finalizado publicado para período ${periodo.nombre}`);
 
     return {
-      mensaje: 'Período cerrado correctamente',
-      periodo: periodo.numero_periodo,
+      mensaje: 'Período finalizado correctamente',
+      periodo: periodo.nombre,
       fecha_cierre: new Date(),
     };
   }

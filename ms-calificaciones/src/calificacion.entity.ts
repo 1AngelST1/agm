@@ -1,46 +1,52 @@
 import {
   Entity,
-  PrimaryColumn,
   Column,
+  PrimaryColumn,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  BeforeInsert,
 } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
+import { Grupo } from './grupo.entity';
+import { Actividad } from './actividad.entity';
 
-@Entity('periodos')
-export class Periodo {
+@Entity('calificaciones')
+export class Calificacion {
   @PrimaryColumn()
-  id: string = '';
+  matricula_alumno!: string;
 
-  @Column({ unique: true })
-  nombre: string = '';
+  @PrimaryColumn()
+  nrc_grupo!: string;
 
-  // Propiedad agregada para solucionar el error del controller
   @Column({ nullable: true })
-  numero_periodo: number = 0;
+  nrc_materia?: string;
 
-  @Column({ type: 'date' })
-  fecha_inicio: string = '';
+  @ManyToOne(() => Grupo)
+  @JoinColumn({ name: 'nrc_grupo' })
+  grupo!: Grupo;
 
-  @Column({ type: 'date' })
-  fecha_fin: string = '';
+  @Column({ nullable: true })
+  actividad_id?: string;
 
-  @Column()
-  plan_estudios: string = '';
+  @ManyToOne(() => Actividad, { nullable: true })
+  @JoinColumn({ name: 'actividad_id' })
+  actividad?: Actividad;
 
-  @Column({ default: false })
-  activo: boolean = false;
+  @Column('decimal', { precision: 4, scale: 2, nullable: true })
+  calificacion_ordinaria!: number;
+
+  @Column('decimal', { precision: 4, scale: 2, nullable: true })
+  calificacion_final?: number;
+
+  @Column({ nullable: true })
+  tipo_calificacion?: 'examen' | 'tarea' | 'proyecto';
+
+  @Column({ default: 'Cursando' })
+  estatus!: string;
 
   @CreateDateColumn()
-  creado_en: Date = new Date();
+  created_at!: Date;
 
   @UpdateDateColumn()
-  actualizado_en: Date = new Date();
-
-  @BeforeInsert()
-  generateId() {
-    const shortId = uuidv4().split('-')[0].toUpperCase();
-    this.id = `PER-${shortId}`;
-  }
+  updated_at!: Date;
 }

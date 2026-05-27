@@ -4,8 +4,8 @@
 
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '../../../shared/rabbitmq.constants';
-import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent, PeriodoIniciado, PeriodoCerradoEvent } from '../../../shared/events.types';
+import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
+import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent, PeriodoIniciadoEvent, PeriodoFinalizadoEvent } from '@shared/events.types';
 import { AppController } from './app.controller';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class RabbitMQListener implements OnModuleInit {
   private async connect() {
     try {
       this.connection = (await amqp.connect(RABBITMQ_CONFIG.url)) as any;
-      this.channel = (await this.connection!.createChannel()) as any;
+      this.channel = await (this.connection as any).createChannel();
 
       await this.channel!.assertExchange(
         RABBITMQ_EXCHANGE,
@@ -75,7 +75,7 @@ export class RabbitMQListener implements OnModuleInit {
       await this.channel!.bindQueue(
         RABBITMQ_QUEUES.CALIFICACIONES,
         RABBITMQ_EXCHANGE,
-        RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO
+        RABBITMQ_ROUTING_KEYS.PERIODO_FINALIZADO
       );
 
       // Consumir mensajes
@@ -92,9 +92,9 @@ export class RabbitMQListener implements OnModuleInit {
             } else if (routingKey === RABBITMQ_ROUTING_KEYS.ASISTENCIA_RESUMEN_CALCULADO) {
               await this.appController.onAsistenciaResumenCalculado(content as AsistenciaResumenCalculadoEvent);
             } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_INICIADO) {
-              this.logger.log(`📅 Período iniciado: ${content.numero_periodo}`);
-            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_CERRADO) {
-              this.logger.log(`📅 Período cerrado: ${content.numero_periodo}`);
+              this.logger.log(`📅 Período iniciado: ${content.nombre}`);
+            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_FINALIZADO) {
+              this.logger.log(`📅 Período finalizado: ${content.nombre}`);
             }
 
             this.channel!.ack(msg);

@@ -323,7 +323,7 @@ export class AppController implements OnModuleInit {
       nrc_materia: body.nrc_materia,
       calificacion_final: body.calificacion_final,
       derecho_proyecto: body.derecho_proyecto,
-      estatus: calificacion.estatus,
+      estatus: calificacion.estatus.toLowerCase() as 'aprobado' | 'reprobado' | 'condicional',
       fecha_asignacion: new Date(),
       asignado_por: 'Sistema',
     };
@@ -723,13 +723,10 @@ private async enviarNotificacionActualizacion(matricula: string, notaAnterior: n
 
       // Crear calificación inicial para el alumno
       const calificacion = this.calificacionRepository.create({
-        matricula_alumno: event.matricula,
-        nrc_materia: event.nrc_materia,
-        calificacion_examen: null,
-        calificacion_tareas: null,
-        calificacion_proyecto: null,
-        calificacion_final: null,
-      });
+      matricula_alumno: event.matricula,
+      nrc_grupo: event.nrc_materia,
+      nrc_materia: event.nrc_materia
+    });
 
       await this.calificacionRepository.save(calificacion);
 
