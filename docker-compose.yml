@@ -245,6 +245,33 @@ services:
     networks:
       - agm-network
 
+  # 10. Microservicio de Reportes
+  ms-reportes:
+    build:
+      context: .
+      dockerfile: ./ms-reportes/Dockerfile
+    container_name: agm_ms_reportes
+    ports:
+      - "3007:3007"  # REST API
+    environment:
+      - DB_HOST=postgres-db # O 
+      - DB_PORT=5432
+      - DB_USERNAME=admin
+      - DB_PASSWORD=adminpassword
+      - DB_DATABASE=agm_reportes_db
+      - PORT=3007
+      - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672
+    depends_on:
+      postgres-db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./proto:/proto
+    restart: unless-stopped
+    networks:
+      - agm-network
+
 # Estas secciones van al final, declaradas una sola vez.
 volumes:
   pgdata:

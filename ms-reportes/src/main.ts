@@ -27,8 +27,8 @@ async function bootstrap() {
   logger.log('📡 Servidor gRPC escuchando en el puerto 5007');
 
   // Lanzar el servidor REST externo
-  const restPort = 3007;
-  await app.listen(restPort);
-  logger.log(`🚀 Servidor REST escuchando en http://localhost:${restPort}`);
+  const port = process.env.PORT || process.env.REST_PORT || 3007;
+  await app.listen(port, '0.0.0.0'); 
+  console.log(`📊 ms-reportes REST escuchando en puerto ${port}`);
 }
 void bootstrap();
