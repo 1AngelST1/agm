@@ -4,7 +4,7 @@
 
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
+import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS, RABBITMQ_RETRY_CONFIG } from '@shared/rabbitmq.constants';
 import { AlumnoInscritoEvent, CalificacionFinalAsignadaEvent, AsistenciaResumenCalculadoEvent, InscripcionRechazadaEvent, MateriaCargaLlenaEvent } from '@shared/events.types';
 
 interface DLQMessage {
@@ -260,6 +260,9 @@ export class RabbitMQListener implements OnModuleInit {
       // Crear DLQ si no existe
       await this.channel!.assertQueue(RABBITMQ_QUEUES.DEAD_LETTER, {
         durable: true,
+        arguments: {                                                 
+          'x-message-ttl': RABBITMQ_RETRY_CONFIG.DLQ_MESSAGE_TTL_MS, 
+        },
       });
 
       // Consumir mensajes del DLQ

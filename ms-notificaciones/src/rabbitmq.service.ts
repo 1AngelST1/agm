@@ -240,6 +240,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
       // Asegurar que la queue existe
       await this.channel!.assertQueue(RABBITMQ_QUEUES.DEAD_LETTER, {
         durable: true,
+        arguments: {
+          'x-message-ttl': RABBITMQ_RETRY_CONFIG.DLQ_MESSAGE_TTL_MS,
+        },
       });
 
       // Enviar directamente a la DLQ

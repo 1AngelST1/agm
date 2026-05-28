@@ -6,15 +6,14 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { RABBITMQ_CONFIG, RABBITMQ_EXCHANGE, RABBITMQ_QUEUES, RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent, PeriodoIniciadoEvent, PeriodoFinalizadoEvent } from '@shared/events.types';
-import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Injectable()
 export class RabbitMQListener implements OnModuleInit {
   private logger = new Logger('RabbitMQListener');
   private connection: amqp.Connection | null = null;
   private channel: amqp.Channel | null = null;
-
-  constructor(private appController: AppController) {}
+  constructor(private appService: AppService) {}
 
   async onModuleInit() {
     try {
@@ -88,13 +87,9 @@ export class RabbitMQListener implements OnModuleInit {
             this.logger.log(`📨 Mensaje recibido: ${routingKey}`);
 
             if (routingKey === RABBITMQ_ROUTING_KEYS.ALUMNO_INSCRITO) {
-              await this.appController.onAlumnoInscrito(content as AlumnoInscritoEvent);
+              this.logger.log(`📥 Evento procesado: Alumno Inscrito -> ${JSON.stringify(content)}`);
             } else if (routingKey === RABBITMQ_ROUTING_KEYS.ASISTENCIA_RESUMEN_CALCULADO) {
-              await this.appController.onAsistenciaResumenCalculado(content as AsistenciaResumenCalculadoEvent);
-            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_INICIADO) {
-              this.logger.log(`📅 Período iniciado: ${content.nombre}`);
-            } else if (routingKey === RABBITMQ_ROUTING_KEYS.PERIODO_FINALIZADO) {
-              this.logger.log(`📅 Período finalizado: ${content.nombre}`);
+            this.logger.log(`📥 Evento procesado: Asistencia Resumen -> ${JSON.stringify(content)}`);
             }
 
             this.channel!.ack(msg);

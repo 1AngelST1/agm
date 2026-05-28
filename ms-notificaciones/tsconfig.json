@@ -23,6 +23,6 @@
     "baseUrl": "./",
     "paths": {
       "@shared/*": ["src/shared/*", "../shared/*"]
-    }
+    },
   }
 }

@@ -723,10 +723,10 @@ private async enviarNotificacionActualizacion(matricula: string, notaAnterior: n
 
       // Crear calificación inicial para el alumno
       const calificacion = this.calificacionRepository.create({
-      matricula_alumno: event.matricula,
-      nrc_grupo: event.nrc_materia,
-      nrc_materia: event.nrc_materia
-    });
+        matricula_alumno: event.matricula,
+        nrc_grupo: event.nrc_materia,
+        nrc_materia: event.nrc_materia
+      });
 
       await this.calificacionRepository.save(calificacion);
 

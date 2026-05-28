@@ -192,9 +192,9 @@ export class AppController {
     const evento: PeriodoIniciadoEvent = {
       periodo_id: periodo.id,
       nombre: periodo.nombre,
+      estado: 'activo',
       fecha_inicio: new Date(periodo.fecha_inicio),
       fecha_fin: new Date(periodo.fecha_fin),
-      estado: 'activo'
     };
 
     await this.rabbitmqService.publishEvent(
