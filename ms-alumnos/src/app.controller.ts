@@ -311,16 +311,16 @@ export class AppController implements OnModuleInit {
     // 📤 ENVIAR CORREO DE INSCRIPCIÓN POR gRPC
     try {
       // 1. Extraemos el ID del usuario ligado a este alumno (ajusta 'alumnoLocal' al nombre de tu variable)
-      const userIdAlumno = alumnoLocal.userId || alumnoLocal.user_id || alumnoLocal['user_id'];
+      const userIdAlumno = alumnoLocal.user_id;
 
       // 2. Le preguntamos a ms-auth los datos reales de ese estudiante
-      const userData = await lastValueFrom(
+      const userData: any = await lastValueFrom(
         this.authService.GetUserById({ user_id: userIdAlumno, userId: userIdAlumno } as any).pipe(timeout(3000))
       );
 
       // 3. Extraemos los datos, o usamos un plan B
-      const nombreReal = userData?.name || userData?.nombre || userData?.nombre_usuario || 'Estudiante';
-      const correoReal = userData?.email || userData?.correo || req.user.email; // Solo usa req.user.email si Auth falla
+      const nombreReal = userData?.name || 'Estudiante';
+      const correoReal = userData?.email || req.user.email;
 
       // 4. Armamos el payload híbrido
       const notifData = {

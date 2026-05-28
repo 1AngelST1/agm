@@ -76,8 +76,8 @@ const getProtoPath = (protoFile: string) => {
         transport: Transport.GRPC,
         options: {
           package: 'periodos',
-          protoPath: getProtoPath('periodos.proto'),
-          url: `ms-periodos:5003`,
+          protoPath: '/app/proto/periodos.proto', // 🔥 Ruta absoluta
+          url: 'ms-periodos:5001',                // 🔥 Nombre del contenedor
         },
       },
     ]),

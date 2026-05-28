@@ -181,12 +181,27 @@ export class AppController implements OnModuleInit {
     }
 
     try {
+      console.log(`🔍 [CALIFICACIONES] Validando NRC ${dto.nrc_grupo} con ms-periodos...`);
+      
+      // 🔥 El Bombardeo Híbrido: Mandamos todas las variantes posibles
       const materiaInfo = await firstValueFrom(
-        this.periodosService.GetMateriaById({ nrc: dto.nrc_grupo }).pipe(timeout(5000))
+        this.periodosService.GetMateriaById({ 
+          nrc: dto.nrc_grupo,
+          materia_id: dto.nrc_grupo,
+          materiaId: dto.nrc_grupo
+        } as any).pipe(timeout(5000))
       );
-      if (!materiaInfo || !materiaInfo.nombre) throw new NotFoundException('Materia no existe');
+
+      console.log('✅ Respuesta de ms-periodos:', materiaInfo);
+
+      // Verificamos si ms-periodos nos devolvió un mensaje de error camuflado
+      if (!materiaInfo || materiaInfo.nombre === 'Materia no encontrada') {
+        throw new NotFoundException('ms-periodos no encontró este NRC en su base de datos.');
+      }
     } catch (error) {
-      throw new NotFoundException('Error validando la materia con Periodos');
+      // Imprimimos el error real en rojo en tu terminal
+      console.error('❌ Error real contactando a ms-periodos:', error);
+      throw new NotFoundException('Error validando la materia con Periodos.');
     }
 
     const grupo = await this.grupoRepository.findOne({
@@ -205,6 +220,7 @@ export class AppController implements OnModuleInit {
       this.calificacionRepository.create({
         grupo,
         matricula_alumno: dto.matricula_alumno,
+        nrc_materia: dto.nrc_grupo,
         calificacion_ordinaria: dto.calificacion_ordinaria,
         estatus,
         tipo_calificacion: dto.tipo_calificacion,
