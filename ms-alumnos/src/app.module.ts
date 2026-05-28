@@ -34,10 +34,8 @@ import { RabbitMQModule } from './rabbitmq.module';
         transport: Transport.GRPC,
         options: {
           package: 'auth',
-          protoPath: join(__dirname, '../../proto/auth.proto'),
-          url: process.env.AUTH_GRPC_HOST
-            ? `${process.env.AUTH_GRPC_HOST}:${process.env.AUTH_GRPC_PORT || 5000}`
-            : 'localhost:5000',
+          protoPath: '/app/proto/auth.proto',
+          url: 'ms-auth:5000',
         },
       },
       {
@@ -45,8 +43,8 @@ import { RabbitMQModule } from './rabbitmq.module';
         transport: Transport.GRPC,
         options: {
           package: 'notificaciones',
-          protoPath: join(__dirname, '../../proto/notificaciones.proto'),
-          url: 'localhost:5014',
+          protoPath: '/app/proto/notificaciones.proto',
+          url: 'ms-notificaciones:5014',
         },
       },
       {
@@ -54,8 +52,8 @@ import { RabbitMQModule } from './rabbitmq.module';
         transport: Transport.GRPC,
         options: {
           package: 'periodos',
-          protoPath: join(__dirname, '../../proto/periodos.proto'),
-          url: 'localhost:5001',
+          protoPath: '/app/proto/periodos.proto',
+          url: 'ms-periodos:5001',
         },
       },
     ]),

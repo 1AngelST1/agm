@@ -50,6 +50,7 @@ interface NotificacionesService {
     nombre_materia?: string;
     email_destino?: string;
   }): Observable<any>;
+  sendBajaNotif(data: any): Observable<any>;
 }
 
 interface AuthService {
@@ -190,7 +191,7 @@ export class AppController implements OnModuleInit {
    * ✅ POST /alumnos/inscribir
    * Inscripción dinámica
    */
-  @Post('inscribir')
+@Post('inscribir')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'alumno')
   async inscribirMateria(
@@ -205,17 +206,16 @@ export class AppController implements OnModuleInit {
       throw new NotFoundException('No se puede inscribir: El alumno no existe en el sistema.');
     }
 
-    // Buscamos si ya tiene una inscripción ACTIVA
-    const yaInscrito = await this.inscripcionRepository.findOne({
-      where: { 
-        matricula_alumno: body.matricula_alumno, 
-        nrc_materia: body.nrc_materia,
-        estatus: 'activo'
-      }
-    });
+    console.log(`🚀 [ALUMNOS] Burlancho caché Docker. Inscribiendo Matrícula: ${body.matricula_alumno} | NRC: ${body.nrc_materia}`);
+
+    // 🛡️QueryBuilder en crudo para evadir el error de EntityProperty
+    const yaInscrito = await this.inscripcionRepository.createQueryBuilder("inscripcion")
+      .where("inscripcion.matricula_alumno = :matricula", { matricula: body.matricula_alumno })
+      .andWhere("inscripcion.nrc_materia = :nrc", { nrc: body.nrc_materia })
+      .andWhere("inscripcion.estatus = :estatus", { estatus: 'activo' })
+      .getOne();
 
     if (yaInscrito) {
-      // 📤 Publicar evento de rechazo
       const eventoRechazo: InscripcionRechazadaEvent = {
         alumno_id: body.matricula_alumno,
         matricula: body.matricula_alumno,
@@ -224,178 +224,116 @@ export class AppController implements OnModuleInit {
         detalle: 'El alumno ya se encuentra inscrito en esta materia',
         fecha_rechazo: new Date(),
       };
-
-      await this.rabbitmqService.publishEvent(
-        RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA,
-        eventoRechazo,
-      );
-
-      return { 
-        mensaje: 'El alumno ya se encuentra inscrito activamente en esta asignatura.', 
-        inscripcion: yaInscrito 
-      };
+      await this.rabbitmqService.publishEvent(RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA, eventoRechazo);
+      return { mensaje: 'El alumno ya se encuentra inscrito actualmente.', inscripcion: yaInscrito };
     }
 
-    // ⚠️ Validar carga máxima de créditos (máximo 18)
-    const inscripcionesActivas = await this.inscripcionRepository.find({
-      where: { matricula_alumno: body.matricula_alumno, estatus: 'activo' },
-      relations: ['nrc_materia'],
-    });
+    // 🛡️Validar carga máxima
+    const inscripcionesActivas = await this.inscripcionRepository.createQueryBuilder("inscripcion")
+      .where("inscripcion.matricula_alumno = :matricula", { matricula: body.matricula_alumno })
+      .andWhere("inscripcion.estatus = :estatus", { estatus: 'activo' })
+      .getMany();
 
-    const creditosActuales = inscripcionesActivas.length * 6; // Asumiendo 6 créditos por materia
+    const creditosActuales = inscripcionesActivas.length * 6; 
     const MAX_CREDITOS = 18;
 
     if (creditosActuales + 6 > MAX_CREDITOS) {
-      // 📤 Publicar evento de rechazo
       const eventoRechazo: InscripcionRechazadaEvent = {
         alumno_id: body.matricula_alumno,
         matricula: body.matricula_alumno,
         nrc_materia: body.nrc_materia,
         motivo: 'carga_excedida',
-        detalle: `Carga actual: ${creditosActuales} créditos. Máximo permitido: ${MAX_CREDITOS} créditos.`,
+        detalle: `Carga actual: ${creditosActuales} créditos. Máximo: ${MAX_CREDITOS}.`,
         fecha_rechazo: new Date(),
       };
-
-      await this.rabbitmqService.publishEvent(
-        RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA,
-        eventoRechazo,
-      );
-
-      return { 
-        mensaje: `No puede inscribirse: Superaría la carga máxima de ${MAX_CREDITOS} créditos. Actualmente tiene ${creditosActuales} créditos.`,
-        creditos_actuales: creditosActuales,
-        max_creditos: MAX_CREDITOS,
-      };
+      await this.rabbitmqService.publishEvent(RABBITMQ_ROUTING_KEYS.INSCRIPCION_RECHAZADA, eventoRechazo);
+      return { mensaje: 'Superaría la carga máxima de créditos.', creditos_actuales: creditosActuales, max_creditos: MAX_CREDITOS };
     }
 
     let correoAlumno = req.user.email;
     let nombreMateria = `NRC: ${body.nrc_materia}`;
     let nombreAlumno = 'Estudiante';
 
-    // 1️⃣ Intentar obtener el nombre de la materia desde ms-periodos (CON BOMBARDEO)
     try {
-      console.log('🔍 Consultando materia con NRC:', body.nrc_materia);
       const materiaInfo = await lastValueFrom(
-        this.periodosService.GetMateriaById({ 
-          materia_id: body.nrc_materia,
-          materiaId: body.nrc_materia,
-          nrc: body.nrc_materia
-        } as any).pipe(timeout(3000))
+        this.periodosService.GetMateriaById({ materia_id: body.nrc_materia, materiaId: body.nrc_materia, nrc: body.nrc_materia } as any).pipe(timeout(3000))
       );
-      console.log('✅ Datos de materia:', materiaInfo);
-      
       if (materiaInfo && materiaInfo.nombre && materiaInfo.nombre !== 'Materia no encontrada') {
         nombreMateria = `${materiaInfo.clave} - ${materiaInfo.nombre}`;
-        console.log('📚 Nombre materia actualizado:', nombreMateria);
       }
-    } catch (errorMateria) {
-      console.error('❌ Error obteniendo materia:', (errorMateria as Error).message);
-    }
+    } catch (errorMateria) {}
 
-    // 2️⃣ Intentar obtener datos del alumno (nombre y email)
     try {
-      console.log('🔍 Consultando datos del alumno, user_id:', alumnoLocal.user_id);
       const datosAuthAlumno = await lastValueFrom(
         this.authService.GetUserById({ userId: alumnoLocal.user_id }).pipe(timeout(3000))
       );
-      console.log('✅ Datos de auth:', datosAuthAlumno);
       if (datosAuthAlumno) {
-        if (datosAuthAlumno.email) {
-          correoAlumno = datosAuthAlumno.email;
-          console.log('📧 Email actualizado:', correoAlumno);
-        }
-        if (datosAuthAlumno.name) {
-          nombreAlumno = datosAuthAlumno.name;
-          console.log('👤 Nombre alumno actualizado:', nombreAlumno);
-        }
+        correoAlumno = datosAuthAlumno.email || correoAlumno;
+        nombreAlumno = datosAuthAlumno.name || nombreAlumno;
       }
-    } catch (errorQuery) {
-      console.error('❌ Error obteniendo datos del alumno:', (errorQuery as Error).message);
-    }
-
-    console.log('📨 Datos finales para notificación:', { nombreAlumno, nombreMateria, correoAlumno });
+    } catch (errorQuery) {}
 
     const sufijoAleatorio = crypto.randomBytes(4).toString('hex').toUpperCase();
+    
+    // 🛡️ RGuardamos la inscripción de forma segura
     const nuevaInscripcion = this.inscripcionRepository.create({
       id: `INC-${sufijoAleatorio}`,
       matricula_alumno: body.matricula_alumno,
       nrc_materia: body.nrc_materia,
       estatus: 'activo'
     });
-
     await this.inscripcionRepository.save(nuevaInscripcion);
 
-    // 📨 PUBLICAR EVENTO: Alumno inscrito
-    // Este evento será consumido por ms-asistencias, ms-calificaciones, ms-periodos, etc
     try {
       const alumnoInscritoEvent: AlumnoInscritoEvent = {
         alumno_id: alumnoLocal.id,
         matricula: body.matricula_alumno,
         nrc_materia: body.nrc_materia,
-        periodo: 'actual', // TODO: obtener período actual desde ms-periodos
+        periodo: 'actual', 
         fecha_inscripcion: new Date(),
-        docente_id: undefined, // Será asignado por ms-periodos
+        docente_id: undefined, 
       };
-
-      await this.rabbitmqService.publishEvent(
-        RABBITMQ_ROUTING_KEYS.ALUMNO_INSCRITO,
-        alumnoInscritoEvent
-      );
-
+      await this.rabbitmqService.publishEvent(RABBITMQ_ROUTING_KEYS.ALUMNO_INSCRITO, alumnoInscritoEvent);
       console.log('✅ Evento alumno.inscrito publicado en RabbitMQ');
-    } catch (errorRabbit) {
-      console.error('⚠️ Error publicando evento en RabbitMQ:', errorRabbit);
-      // No fallar la inscripción si falla RabbitMQ
-      // El evento se podría reintentar más tarde
-    }
+    } catch (errorRabbit) {}
 
-    // 🔍 Verificar si el grupo alcanzó capacidad máxima (40 estudiantes)
     try {
       const inscritos = await this.inscripcionRepository.count({
         where: { nrc_materia: body.nrc_materia, estatus: 'activo' }
       });
-
-      const CAPACIDAD_MAXIMA = 40;
-
-      // Si justo se completó el grupo (inscritos = 40), publicar evento
-      if (inscritos === CAPACIDAD_MAXIMA) {
-        const eventoCargaLlena: MateriaCargaLlenaEvent = {
-          nrc_materia: body.nrc_materia,
-          grupo_id: body.nrc_materia, // El NRC es el ID del grupo
-          capacidad_maxima: CAPACIDAD_MAXIMA,
-          inscritos_actuales: inscritos,
-          timestamp: new Date(),
-        };
-
-        await this.rabbitmqService.publishEvent(
-          RABBITMQ_ROUTING_KEYS.MATERIA_CARGA_LLENA,
-          eventoCargaLlena
-        );
-
-        console.log(`🚨 ALERTA: Materia ${body.nrc_materia} alcanzó capacidad máxima (${inscritos}/${CAPACIDAD_MAXIMA})`);
+      if (inscritos === 40) {
+        await this.rabbitmqService.publishEvent(RABBITMQ_ROUTING_KEYS.MATERIA_CARGA_LLENA, {
+          nrc_materia: body.nrc_materia, grupo_id: body.nrc_materia, capacidad_maxima: 40, inscritos_actuales: inscritos, timestamp: new Date()
+        });
       }
-    } catch (errorCapacidad) {
-      console.error('❌ Error verificando capacidad del grupo:', errorCapacidad);
-    }
+    } catch (errorCapacidad) {}
 
+    // 📤 ENVIAR CORREO DE INSCRIPCIÓN POR gRPC
     try {
+      // 1. Extraemos el ID del usuario ligado a este alumno (ajusta 'alumnoLocal' al nombre de tu variable)
+      const userIdAlumno = alumnoLocal.userId || alumnoLocal.user_id || alumnoLocal['user_id'];
+
+      // 2. Le preguntamos a ms-auth los datos reales de ese estudiante
+      const userData = await lastValueFrom(
+        this.authService.GetUserById({ user_id: userIdAlumno, userId: userIdAlumno } as any).pipe(timeout(3000))
+      );
+
+      // 3. Extraemos los datos, o usamos un plan B
+      const nombreReal = userData?.name || userData?.nombre || userData?.nombre_usuario || 'Estudiante';
+      const correoReal = userData?.email || userData?.correo || req.user.email; // Solo usa req.user.email si Auth falla
+
+      // 4. Armamos el payload híbrido
       const notifData = {
-        nombreAlumno: nombreAlumno,
-        nombreMateria: nombreMateria,
-        emailDestino: correoAlumno,
+        nombreAlumno: nombreReal,       nombre_alumno: nombreReal,
+        nombreMateria: nombreMateria,   nombre_materia: nombreMateria,
+        emailDestino: correoReal,       email_destino: correoReal,
         matricula: alumnoLocal.matricula,
       };
       
-      console.log('📤 ENVIANDO A NOTIFICACIONES:', JSON.stringify(notifData, null, 2));
-      
-      this.notifService
-        .sendBienvenida(notifData)
-        .subscribe({
-          next: (res) => console.log('📩 Notificación enviada desde MS-Alumnos:', res),
-          error: (err) => console.error('❌ Falló gRPC:', err),
-        });
-    } catch (_error) {
-      console.log('⚠️ No se pudo conectar con MS-Notificaciones.');
+      await lastValueFrom(this.notifService.sendBienvenida(notifData as any).pipe(timeout(5000)));
+      console.log(`✅ Correo de inscripción enviado al estudiante real: ${correoReal}`);
+    } catch (error) { 
+      console.error('❌ Error enviando notificación de inscripción por gRPC:', (error as Error).message); 
     }
 
     return {
@@ -445,6 +383,18 @@ export class AppController implements OnModuleInit {
       RABBITMQ_ROUTING_KEYS.ALUMNO_DESINSCRITO,
       evento,
     );
+
+    // 📤 ENVIAR CORREO DE BAJA POR gRPC
+   try {
+      const notifData = {
+        nombreAlumno: "Estudiante",       nombre_alumno: "Estudiante",
+        nombreMateria: `NRC: ${nrc}`,     nombre_materia: `NRC: ${nrc}`,
+        emailDestino: req.user.email,     email_destino: req.user.email,
+        matricula: matricula,
+      };
+      
+      await lastValueFrom(this.notifService.sendBajaNotif(notifData as any).pipe(timeout(5000)));
+    } catch (error) { console.error('❌ Error enviando notificación de baja'); }
 
     return {
       success: true,

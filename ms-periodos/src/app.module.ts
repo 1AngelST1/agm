@@ -33,8 +33,8 @@ import { RabbitMQListener } from './rabbitmq.listener';
         transport: Transport.GRPC,
         options: {
           package: 'auth',
-          protoPath: join(__dirname, '../../proto/auth.proto'),
-          url: process.env.AUTH_GRPC_URL || 'localhost:5000',
+          protoPath: '/app/proto/auth.proto',
+          url: 'ms-auth:5000',
         },
       },
     ]),

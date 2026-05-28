@@ -228,11 +228,13 @@ services:
     container_name: agm_ms_notificaciones
     ports:
       - "3004:3004"  # REST API
+      - "5014:5014"  # gRPC
     environment:
       - DB_HOST=mongo-db
       - DB_PORT=27017
       - DB_NAME=agm_notificaciones_db
       - PORT=3004
+      - GRPC_PORT=5014
       - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672
     depends_on:
       mongo-db:

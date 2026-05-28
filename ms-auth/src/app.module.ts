@@ -5,10 +5,11 @@ import { AppService } from './app.service';
 import { TokenService } from './token.service';
 import { User } from './user.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
 
 @Module({
   imports: [
-    // Aquí configuramos la conexión a tu base de datos en Docker
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -20,10 +21,22 @@ import { JwtModule } from '@nestjs/jwt';
       synchronize: true,
     }),
     TypeOrmModule.forFeature([User]),
-    // 2. Configura el JWT
+    
+    ClientsModule.register([
+      {
+        name: 'NOTIFICACIONES_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'notificaciones',
+          protoPath: '/app/proto/notificaciones.proto',
+          url: 'ms-notificaciones:5014', 
+        },
+      },
+    ]),
+    
     JwtModule.register({
       secret: 'AGM-AST',
-      signOptions: { expiresIn: '2h' }, // El token durará 2 horas
+      signOptions: { expiresIn: '2h' },
     }),
   ],
   controllers: [AppController],

@@ -132,7 +132,7 @@ export class AppController implements OnModuleInit {
 
     try {
       const subject = `¡Bienvenido ${nombreAlumno} a ${materia}!`;
-      const body = `Hola ${nombreAlumno},<br><br>Te has inscrito exitosamente a la materia <strong>${materia}</strong>.<br><br>Esperamos que tengas un excelente desempeño en este curso.`;
+      const body = `Hola ${nombreAlumno},<br><br>Haz sido inscrito exitosamente a la materia <strong>${materia}</strong>.<br><br>Esperamos que tengas un excelente desempeño en este curso.`;
       
       console.log('📧 ENVIANDO EMAIL:', { subject, to: email });
       
@@ -141,6 +141,74 @@ export class AppController implements OnModuleInit {
     } catch (error) {
       console.error('❌ Error enviando email:', (error as Error).message);
       return { success: false, message: 'Fallo al enviar correo' };
+    }
+  }
+
+  @GrpcMethod('NotificacionesService', 'SendCuentaCreada')
+  async sendCuentaCreada(data: { nombre_usuario?: string; nombreUsuario?: string; email_destino?: string; emailDestino?: string; rol?: string }) {
+    console.log('📩 [NOTIFICACIONES] Petición de nueva cuenta recibida:', JSON.stringify(data, null, 2));
+    
+    // Extraemos los datos atrapando tanto camelCase como snake_case por si acaso
+    const nombreUsuario = data.nombre_usuario || data.nombreUsuario || 'Usuario';
+    const email = data.email_destino || data.emailDestino || 'angel.sarmientot@alumno.buap.mx';
+    const rol = data.rol || 'N/A';
+
+    try {
+      const subject = `Tu cuenta ha sido creada - Sistema AGM BUAP`;
+      
+      // 🎨 PLANTILLA HTML PROFESIONAL (Modo Oscuro) en la variable body
+      const body = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; padding: 40px 20px; color: #ffffff;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #1e1e1e; border-radius: 10px; overflow: hidden; border: 1px solid #333333; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+          
+          <!-- Header -->
+          <div style="padding: 30px; border-bottom: 1px solid #333333;">
+            <h2 style="color: #66b3ff; margin: 0; font-size: 24px;">¡Bienvenido al Sistema AGM BUAP!</h2>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 30px;">
+            <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">
+              Hola <strong>${nombreUsuario}</strong>,
+            </p>
+            <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">
+              Nos complace informarte que tu cuenta ha sido habilitada exitosamente en nuestra plataforma institucional.
+            </p>
+            <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">
+              Se te ha asignado el rol de: <span style="color: #66b3ff; font-weight: bold; text-transform: uppercase;">${rol}</span>
+            </p>
+            <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">
+              A partir de este momento, ya puedes iniciar sesión y acceder a los módulos correspondientes a tu perfil. Esperamos que tengas una excelente experiencia.
+            </p>
+            
+            <hr style="border: 0; border-top: 1px solid #444444; margin: 40px 0 20px 0;" />
+            
+            <p style="font-size: 14px; color: #aaaaaa; margin: 0;">Saludos,</p>
+            <p style="font-size: 14px; font-weight: bold; color: #e0e0e0; margin: 5px 0 0 0;">Administración Académica BUAP</p>
+          </div>
+
+          <!-- Footer Confidencialidad -->
+          <div style="background-color: #141414; padding: 20px 30px; text-align: justify;">
+            <p style="font-size: 10px; color: #666666; line-height: 1.4; margin: 0;">
+              La información contenida en este correo se dirige exclusivamente a su destinatario; puede contener INFORMACIÓN CONFIDENCIAL cuya divulgación está prohibida por la ley. Si recibió este mensaje por error, evite su utilización, reproducción o difusión, debiendo eliminarlo de su computadora o cualquier dispositivo electrónico y comunicarlo inmediatamente por esta vía a su emisor.
+            </p>
+            <p style="font-size: 10px; color: #666666; line-height: 1.4; margin: 10px 0 0 0;">
+              Puede consultar los avisos de privacidad para el tratamiento de datos personales en <a href="https://transparencia.buap.mx" style="color: #66b3ff; text-decoration: none;">https://transparencia.buap.mx</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+      `;
+      
+      console.log('📧 ENVIANDO EMAIL DE CUENTA:', { subject, to: email });
+      
+      // 🔥 Usamos tu método existente que hace el envío real
+      await this.enviarEmail(email, subject, body);
+      
+      return { success: true, message: 'Correo de cuenta creada enviado exitosamente' };
+    } catch (error) {
+      console.error('❌ Error enviando email de nueva cuenta:', (error as Error).message);
+      return { success: false, message: 'Fallo al enviar correo de cuenta' };
     }
   }
 

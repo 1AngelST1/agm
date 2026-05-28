@@ -23,7 +23,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'calificaciones',
           protoPath: getProtoPath('calificaciones.proto'),
-          url: 'localhost:5003',
+          url: 'ms-calificaciones:5003',
         },
       },
       {
@@ -32,7 +32,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'alumnos',
           protoPath: getProtoPath('alumnos.proto'),
-          url: 'localhost:5002',
+          url: 'ms-alumnos:5002',
         },
       },
     ]),

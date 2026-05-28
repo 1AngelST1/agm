@@ -14,6 +14,7 @@ import { Actividad } from './actividad.entity';
 import { JwtStrategy } from './guards/jwt.strategy';
 import { RabbitMQModule } from './rabbitmq.module';
 import { RabbitMQListener } from './rabbitmq.listener';
+import { join } from 'path';
 
 // Función para obtener la ruta de los .proto
 const getProtoPath = (protoFile: string) => {
@@ -47,7 +48,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'auth',
           protoPath: getProtoPath('auth.proto'),
-          url: `${process.env.AUTH_GRPC_HOST || 'localhost'}:${process.env.AUTH_GRPC_PORT || '5000'}`,
+          url: 'ms-auth:5000',
         },
       },
       {
@@ -56,7 +57,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'alumnos',
           protoPath: getProtoPath('alumnos.proto'),
-          url: `${process.env.ALUMNOS_GRPC_HOST || 'localhost'}:${process.env.ALUMNOS_GRPC_PORT || '5002'}`,
+          url: 'ms-alumnos:5002',
         },
       },
       // 🚀 CONEXIÓN HACIA NOTIFICACIONES
@@ -65,8 +66,8 @@ const getProtoPath = (protoFile: string) => {
         transport: Transport.GRPC,
         options: {
           package: 'notificaciones',
-          protoPath: getProtoPath('notificaciones.proto'),
-          url: `${process.env.NOTIF_GRPC_HOST || 'localhost'}:${process.env.NOTIF_GRPC_PORT || '5014'}`,
+          protoPath: join(__dirname, '../../proto/notificaciones.proto'),
+          url: 'ms-notificaciones:5014',
         },
       },
       // 🚀 CONEXIÓN HACIA PERIODOS
@@ -76,7 +77,7 @@ const getProtoPath = (protoFile: string) => {
         options: {
           package: 'periodos',
           protoPath: getProtoPath('periodos.proto'),
-          url: `${process.env.PERIODOS_GRPC_HOST || 'localhost'}:${process.env.PERIODOS_GRPC_PORT || '5001'}`,
+          url: `ms-periodos:5003`,
         },
       },
     ]),

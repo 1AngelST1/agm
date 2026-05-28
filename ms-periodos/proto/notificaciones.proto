@@ -3,6 +3,7 @@ syntax = "proto3";
 package notificaciones;
 
 service NotificacionesService {
+  rpc SendCuentaCreada (CuentaCreadaRequest) returns (NotificacionResponse) {}
   rpc SendBienvenida (NotificacionRequest) returns (NotificacionResponse) {}
   rpc SendBajaNotif (NotificacionRequest) returns (NotificacionResponse) {}
   rpc SendActualizacion (ActualizacionRequest) returns (NotificacionResponse) {}
@@ -43,4 +44,10 @@ message ResetPasswordRequest {
   string email_destino = 1;
   string reset_link = 2;
   string nombre_usuario = 3;
+}
+
+message CuentaCreadaRequest {
+  string nombre_usuario = 1;
+  string email_destino = 2;
+  string rol = 3;
 }

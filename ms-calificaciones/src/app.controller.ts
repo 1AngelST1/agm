@@ -167,7 +167,7 @@ export class AppController implements OnModuleInit {
    * ✅ POST /calificar
    * Registrar calificación (admin, docente)
    */
-  @Post('calificar')
+@Post('calificar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'docente')
   async calificarAlumno(
@@ -177,31 +177,16 @@ export class AppController implements OnModuleInit {
       where: { nrc_grupo: dto.nrc_grupo, matricula_alumno: dto.matricula_alumno }
     });
     if (calificacionExistente) {
-      throw new BadRequestException(
-        `Ya existe una calificación para el alumno ${dto.matricula_alumno} en el grupo ${dto.nrc_grupo}. Use PUT para actualizar.`
-      );
+      throw new BadRequestException(`Ya existe una calificación para el alumno. Use PUT para actualizar.`);
     }
 
     try {
-      console.log('ENVIANDO A PERIODOS - nrc_grupo:', dto.nrc_grupo, 'tipo:', typeof dto.nrc_grupo);
       const materiaInfo = await firstValueFrom(
         this.periodosService.GetMateriaById({ nrc: dto.nrc_grupo }).pipe(timeout(5000))
       );
-
-      if (!materiaInfo || !materiaInfo.nombre) {
-        throw new NotFoundException(
-          'La materia con ese NRC no existe en el periodo activo',
-        );
-      }
-
-      console.log(
-        `✅ Validado en MS-2 (Periodos): ${materiaInfo.nombre} (${materiaInfo.creditos} créditos)`,
-      );
+      if (!materiaInfo || !materiaInfo.nombre) throw new NotFoundException('Materia no existe');
     } catch (error) {
-      console.error('❌ Error validando materia en MS-2:', (error as Error).message);
-      throw new NotFoundException(
-        'Error validando la materia con el servicio de Periodos',
-      );
+      throw new NotFoundException('Error validando la materia con Periodos');
     }
 
     const grupo = await this.grupoRepository.findOne({
@@ -212,14 +197,7 @@ export class AppController implements OnModuleInit {
 
     if (dto.actividad_id) {
       const actividad = await this.actividadRepository.findOne({ where: { id: dto.actividad_id } });
-      if (!actividad) {
-        throw new NotFoundException(`La actividad ${dto.actividad_id} no existe`);
-      }
-      if (actividad.nrc_grupo !== dto.nrc_grupo) {
-        throw new BadRequestException(
-          `La actividad ${dto.actividad_id} no pertenece al grupo ${dto.nrc_grupo}`
-        );
-      }
+      if (!actividad) throw new NotFoundException(`La actividad no existe`);
     }
 
     const estatus = dto.calificacion_ordinaria >= 6 ? 'Aprobado' : 'Reprobado';
@@ -234,6 +212,7 @@ export class AppController implements OnModuleInit {
       }),
     );
 
+    // 📤 Enviar el correo y terminar
     await this.enviarNotificacionRegistro(dto.matricula_alumno, calificacionGuardada, dto.nrc_grupo, dto.tipo_calificacion || 'ordinaria');
 
     return calificacionGuardada;
@@ -261,7 +240,7 @@ export class AppController implements OnModuleInit {
     calificacion.estatus = dto.calificacion_ordinaria >= 6 ? 'Aprobado' : 'Reprobado';
     const resultado = await this.calificacionRepository.save(calificacion);
 
-    // Le pasamos la 'notaAnterior' como un número suelto a la función del correo
+    // 📤 Solo llamamos a la función privada
     await this.enviarNotificacionActualizacion(matricula, notaAnterior, dto.calificacion_ordinaria, nrc, calificacion.tipo_calificacion || 'ordinaria');
 
     return resultado;
@@ -358,15 +337,14 @@ export class AppController implements OnModuleInit {
     return await this.calificacionRepository.find({ where: { matricula_alumno: alumno.matricula }, relations: ['grupo', 'grupo.materia'] });
   }
 
-  // ==========================================
+// ==========================================
   // ✉️ MÉTODOS PRIVADOS PARA NOTIFICACIONES
   // ==========================================
 
-private async enviarNotificacionActualizacion(matricula: string, notaAnterior: number, nuevaNota: number, nrc: string, tipo_calificacion: string) {
+  private async enviarNotificacionActualizacion(matricula: string, notaAnterior: number, nuevaNota: number, nrc: string, tipo_calificacion: string) {
     try {
       const alumnoData = await firstValueFrom(this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000)));
       const userId = alumnoData?.userId || alumnoData?.user_id || alumnoData?.['user_id'];
-      
       if (!userId) return; 
 
       const userData = await firstValueFrom(this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000)));
@@ -376,112 +354,67 @@ private async enviarNotificacionActualizacion(matricula: string, notaAnterior: n
       const materiaData = await firstValueFrom(this.periodosService.GetMateriaById({ nrc }).pipe(timeout(3000)));
       const nombreMateria = materiaData?.nombre || materiaData?.nombre_materia || 'Materia';
 
-      await firstValueFrom(
-        this.notificacionesService.SendActualizacion({
-          matricula: matricula,
-          nombreAlumno: nombreAlumno,
-          nombreMateria: nombreMateria,
-          emailDestino: emailAlumno,
-          calificacionAnterior: Number(notaAnterior), // 🔥 Usamos la nota congelada
-          calificacion_anterior: Number(notaAnterior),
-          calificacionNueva: Number(nuevaNota),
-          calificacion_nueva: Number(nuevaNota),
-          nuevaNota: Number(nuevaNota),
-          nueva_nota: Number(nuevaNota),
-          tipoCalificacion: tipo_calificacion,
-          tipo_calificacion: tipo_calificacion
-        } as any).pipe(timeout(3000))
-      );
-      console.log(`✅ Notificación de actualización enviada a ${emailAlumno} de ${notaAnterior} a ${nuevaNota}`);
-    } catch (error) {
-      console.error('❌ Error silencioso:', (error as Error).message);
-    }
+      // 🔥 EL PAYLOAD HÍBRIDO
+      const payload = {
+        matricula: matricula,
+        nombreAlumno: nombreAlumno,       nombre_alumno: nombreAlumno,
+        nombreMateria: nombreMateria,     nombre_materia: nombreMateria,
+        emailDestino: emailAlumno,        email_destino: emailAlumno,
+        calificacionAnterior: Number(notaAnterior), calificacion_anterior: Number(notaAnterior),
+        calificacionNueva: Number(nuevaNota),       calificacion_nueva: Number(nuevaNota),
+        tipoCalificacion: tipo_calificacion,        tipo_calificacion: tipo_calificacion
+      };
+
+      await firstValueFrom(this.notificacionesService.SendActualizacion(payload as any).pipe(timeout(3000)));
+    } catch (error) { console.error('❌ Error silencioso en actualización'); }
   }
 
   private async enviarNotificacionBaja(matricula: string, matNombre: string, tipo_calificacion: string) {
     try {
-      console.log('ENVIANDO A ALUMNOS (Baja) - matricula:', matricula);
-      const alumnoData = await firstValueFrom(
-        this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000))
-      );
-      
+      const alumnoData = await firstValueFrom(this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000)));
       const userId = alumnoData?.userId || alumnoData?.user_id || alumnoData?.['user_id'];
-      
-      if (!userId) {
-        console.log('⚠️ Notificación abortada: ms-alumnos no devolvió un user_id válido.');
-        return;
-      }
+      if (!userId) return;
 
-      console.log('🔍 Consultando a Auth con userId:', userId);
-      const userData = await firstValueFrom(
-        this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000))
-      );
-      console.log('🔐 DATA CRUDA DE AUTH:', JSON.stringify(userData, null, 2));
-
+      const userData = await firstValueFrom(this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000)));
       const nombreAlumno = userData?.name || userData?.nombre || userData?.nombre_usuario || 'Estudiante';
       const emailAlumno = userData?.email || userData?.correo || 'sin-email@buap.mx';
 
-      await firstValueFrom(
-        this.notificacionesService.SendBajaNotif({
-          matricula: matricula,
-          nombreAlumno: nombreAlumno,
-          nombreMateria: matNombre,
-          emailDestino: emailAlumno,
-          tipoCalificacion: tipo_calificacion 
-        }).pipe(timeout(3000))
-      );
-      console.log(`✅ Notificación de baja enviada a ${emailAlumno}`);
-    } catch (error) {
-      console.error('❌ Error silencioso en notificación de baja:', (error as Error).message);
-    }
+      const payload = {
+        matricula: matricula,
+        nombreAlumno: nombreAlumno,       nombre_alumno: nombreAlumno,
+        nombreMateria: matNombre,         nombre_materia: matNombre,
+        emailDestino: emailAlumno,        email_destino: emailAlumno
+      };
+
+      await firstValueFrom(this.notificacionesService.SendBajaNotif(payload as any).pipe(timeout(3000)));
+    } catch (error) { console.error('❌ Error silencioso en notificación de baja'); }
   }
 
   private async enviarNotificacionRegistro(matricula: string, calificacion: Calificacion, nrc: string, tipo_calificacion: string) {
     try {
-      console.log('ENVIANDO A ALUMNOS (Registro) - matricula:', matricula);
-      
-      const alumnoData = await firstValueFrom(
-        this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000))
-      );
-      
-      console.log('🛑 DATA CRUDA RECIBIDA DE gRPC:', JSON.stringify(alumnoData, null, 2));
-      
+      const alumnoData = await firstValueFrom(this.alumnosService.GetAlumnoByMatricula({ matricula }).pipe(timeout(3000)));
       const userId = alumnoData?.userId || alumnoData?.user_id || alumnoData?.['user_id'];
+      if (!userId) return;
 
-      if (!userId) {
-        console.log('⚠️ Notificación abortada: ms-alumnos no devolvió un user_id válido.');
-        return;
-      }
-
-      console.log('🔍 Consultando a Auth con userId:', userId);
-      const userData = await firstValueFrom(
-        this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000))
-      );
-      console.log('🔐 DATA CRUDA DE AUTH:', JSON.stringify(userData, null, 2));
-
+      const userData = await firstValueFrom(this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(3000)));
       const nombreAlumno = userData?.name || userData?.nombre || userData?.nombre_usuario || 'Estudiante';
       const emailAlumno = userData?.email || userData?.correo || 'sin-email@buap.mx';
 
-      const materiaData = await firstValueFrom(
-        this.periodosService.GetMateriaById({ nrc }).pipe(timeout(3000))
-      );
+      const materiaData = await firstValueFrom(this.periodosService.GetMateriaById({ nrc }).pipe(timeout(3000)));
       const nombreMateria = materiaData?.nombre || materiaData?.nombre_materia || 'Materia';
 
-      await firstValueFrom(
-        this.notificacionesService.SendActualizacion({
-          matricula: matricula,
-          nombreAlumno: nombreAlumno,
-          nombreMateria: nombreMateria,
-          emailDestino: emailAlumno,
-          calificacionAnterior: 0, 
-          calificacionNueva: calificacion.calificacion_ordinaria, 
-          tipoCalificacion: tipo_calificacion 
-        }).pipe(timeout(3000))
-      );
-      console.log(`✅ Notificación de registro enviada a ${emailAlumno}`);
-    } catch (error) {
-      console.error('❌ Error silencioso en notificación de registro:', (error as Error).message);
-    }
+      const payload = {
+        matricula: matricula,
+        nombreAlumno: nombreAlumno,       nombre_alumno: nombreAlumno,
+        nombreMateria: nombreMateria,     nombre_materia: nombreMateria,
+        emailDestino: emailAlumno,        email_destino: emailAlumno,
+        calificacionAnterior: 0,          calificacion_anterior: 0,
+        calificacionNueva: Number(calificacion.calificacion_ordinaria), calificacion_nueva: Number(calificacion.calificacion_ordinaria),
+        tipoCalificacion: tipo_calificacion, tipo_calificacion: tipo_calificacion
+      };
+
+      await firstValueFrom(this.notificacionesService.SendActualizacion(payload as any).pipe(timeout(3000)));
+    } catch (error) { console.error('❌ Error silencioso en notificación de registro'); }
   }
 
   // ==========================================
