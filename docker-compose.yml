@@ -195,8 +195,8 @@ services:
       dockerfile: ./ms-periodos/Dockerfile
     container_name: agm_ms_periodos
     ports:
-      - "3004:3004"  # REST API
-      - "5004:5004"  # gRPC
+      - "3001:3001"  # REST API
+      - "5001:5001"  # gRPC
     environment:
       - DB_HOST=postgres-db
       - DB_PORT=5432
@@ -204,8 +204,8 @@ services:
       - DB_PASSWORD=adminpassword
       - DB_DATABASE=agm_periodos_db
       - AUTH_GRPC_URL=ms-auth:5000
-      - PORT=3004
-      - GRPC_PORT=5004
+      - PORT=3001
+      - GRPC_PORT=5001
       - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672
     depends_on:
       postgres-db:
@@ -227,12 +227,12 @@ services:
       dockerfile: ./ms-notificaciones/Dockerfile
     container_name: agm_ms_notificaciones
     ports:
-      - "3006:3006"  # REST API
+      - "3004:3004"  # REST API
     environment:
       - DB_HOST=mongo-db
       - DB_PORT=27017
       - DB_NAME=agm_notificaciones_db
-      - PORT=3006
+      - PORT=3004
       - RABBITMQ_URL=amqp://agm_user:agm_password@rabbitmq:5672
     depends_on:
       mongo-db:
