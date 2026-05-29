@@ -32,5 +32,5 @@ export class AppController {
         .status(500)
         .json({ success: false, message: 'No se pudo generar el reporte' });
       }
-   }
+  }
 } 

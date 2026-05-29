@@ -15,6 +15,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { GrpcMethod } from '@nestjs/microservices';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -22,7 +23,6 @@ import { firstValueFrom, Observable, timeout } from 'rxjs';
 import { AlumnoInscritoEvent, AsistenciaResumenCalculadoEvent, CalificacionFinalAsignadaEvent } from '@shared/events.types';
 import { RABBITMQ_ROUTING_KEYS } from '@shared/rabbitmq.constants';
 import { RabbitMQService } from './rabbitmq.service';
-
 import { Materia } from './materia.entity';
 import { Grupo } from './grupo.entity';
 import { Calificacion } from './calificacion.entity';
@@ -608,8 +608,8 @@ export class AppController implements OnModuleInit {
           
           const userId = alumnoData?.userId || alumnoData?.user_id;
           if (userId) {
-             const authData = await firstValueFrom(this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(2000)));
-             nombreEstudiante = authData?.name || authData?.nombre || 'Estudiante';
+              const authData = await firstValueFrom(this.authService.GetUserById({ user_id: userId, userId: userId } as any).pipe(timeout(2000)));
+              nombreEstudiante = authData?.name || authData?.nombre || 'Estudiante';
           }
         } catch {
           // Si falla, se queda el valor por defecto
@@ -658,6 +658,16 @@ export class AppController implements OnModuleInit {
         proyecto: ponderacion.proyecto_porcentaje,
       },
     };
+  }
+
+  @GrpcMethod('CalificacionesService', 'GetConcentrado')
+  async getConcentradoGrpc(data: { nrc: string }) {
+    this.logger.log(`📡 [gRPC] Petición de concentrado recibida para NRC: ${data.nrc}`);
+    
+    const resultado = await this.obtenerConcentrado(data.nrc);
+    
+    // 🔥 Asegúrate de que esto se vea exactamente así:
+    return { calificaciones: resultado.calificaciones };
   }
 
   /**

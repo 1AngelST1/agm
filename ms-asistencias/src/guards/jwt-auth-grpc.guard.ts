@@ -1,59 +1,52 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  Inject,
-  UnauthorizedException,
-  OnModuleInit,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, Inject, OnModuleInit, Logger } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
+
+interface AuthServiceClient {
+  ValidateToken(data: { token: string }): Observable<any>;
+}
 
 @Injectable()
 export class JwtAuthGrpcGuard implements CanActivate, OnModuleInit {
-  private authService: any;
+  private authService!: AuthServiceClient;
+  private logger = new Logger('JwtAuthGrpcGuard');
 
   constructor(@Inject('AUTH_SERVICE') private client: ClientGrpc) {}
 
   onModuleInit() {
-    this.authService = this.client.getService<any>('AuthService');
+    this.authService = this.client.getService<AuthServiceClient>('AuthService');
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
+    const req = context.switchToHttp().getRequest();
+    const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token no proporcionado o inválido');
+    if (!authHeader) {
+      throw new UnauthorizedException('Falta el token de autorización');
     }
 
     const token = authHeader.split(' ')[1];
 
     try {
-      const response: any = await firstValueFrom(
-        this.authService.ValidateToken({ token }),
-      );
-
-      if (!response.valid) {
-        throw new UnauthorizedException('Token expirado o inválido');
+      // Pedimos a ms-auth que valide el token
+      const response = await firstValueFrom(this.authService.ValidateToken({ token }));
+      
+      if (!response || (!response.userId && !response.user_id)) {
+        throw new UnauthorizedException('Token inválido o expirado');
       }
 
-      request.user = {
-        userId: response.userId,
-        rol: response.rol,
+      // 🔥 Inyectamos los datos limpios para que el RolesGuard los pueda leer
+      req.user = {
+        userId: response.userId || response.user_id,
+        email: response.email,
+        role: response.role,
       };
 
       return true;
     } catch (error) {
-      throw new UnauthorizedException(
-        'No autorizado por el servidor de autenticación',
-      );
+      // Si algo falla, ahora sí lo veremos en letras rojas en la consola
+      this.logger.error('❌ Error validando token en gRPC:', (error as Error).message);
+      throw new UnauthorizedException('No autorizado por el servidor de autenticación');
     }
   }
 }

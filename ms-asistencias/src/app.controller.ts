@@ -15,13 +15,13 @@ export class AppController {
   ) {}
 
   @Post('generar-qr')
-  @Roles('docente') // 👨‍🏫 Solo los maestros pueden generar QRs
+  @Roles('admin', 'docente') // 👨‍🏫 Solo los maestros pueden generar QRs
   generarQr(@Body() generarQrDto: GenerarQrDto) {
     return this.appService.generarQrDocente(generarQrDto.nrc_materia);
   }
 
   @Post('registrar')
-  @Roles('alumno') // 🧑‍🎓 Solo los alumnos pueden escanearlos
+  @Roles('admin', 'alumno') // 🧑‍🎓 Solo los alumnos pueden escanearlos
   registrarAsistencia(@Body() registrarAsistenciaDto: RegistrarAsistenciaDto) {
     return this.appService.registrarAsistenciaAlumno(
       registrarAsistenciaDto.matricula_alumno,
@@ -31,7 +31,7 @@ export class AppController {
   }
 
   @Get('calcular-resumen/:nrc_materia')
-  @Roles('docente')
+  @Roles('admin', 'docente')
   async calcularResumen(@Param('nrc_materia') nrc_materia: string) {
     return this.appService.calcularResumenAsistencia(nrc_materia, this.rabbitmqService);
   }

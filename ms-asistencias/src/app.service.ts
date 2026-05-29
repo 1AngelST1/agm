@@ -57,6 +57,20 @@ export class AppService {
       );
     }
 
+    // 🛑 FILTRO ANTI-TRAMPAS: Verificar si ya se registró hoy
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Seteamos la hora a las 00:00:00 del día actual
+
+    const yaRegistrado = await this.asistenciaRepository.createQueryBuilder('asistencia')
+      .where('asistencia.matricula_alumno = :matricula', { matricula })
+      .andWhere('asistencia.nrc_materia = :nrc', { nrc: nrc_materia })
+      .andWhere('asistencia.fecha_registro >= :hoy', { hoy })
+      .getOne();
+
+    if (yaRegistrado) {
+      throw new BadRequestException('Ya tienes tu asistencia registrada para el día de hoy en esta materia.');
+    }
+
     // Generamos un sufijo aleatorio de 8 caracteres
     const sufijoAleatorio = crypto.randomBytes(4).toString('hex').toUpperCase();
 
@@ -78,7 +92,7 @@ export class AppService {
         nrc_materia: nrc_materia,
         estado: 'presente',
         timestamp: new Date(),
-        qr_token: token_qr, // <-- CORRECCIÓN: Faltaba enviar el token
+        qr_token: token_qr,
       };
 
       await rabbitmqService.publishEvent(
@@ -100,52 +114,27 @@ export class AppService {
     };
   }
 
-  /**
-   * 📨 Consumidor: Alumno se inscribió a una materia
-   * Se ejecuta automáticamente cuando llega el evento desde RabbitMQ
-   */
+  // ... (Tus métodos onAlumnoInscrito y calcularResumenAsistencia se quedan exactamente igual)
   async onAlumnoInscrito(event: AlumnoInscritoEvent) {
     try {
-      this.logger.log(
-        `📨 Evento recibido: Alumno ${event.matricula} inscrito a ${event.nrc_materia}`
-      );
-
-      // Aquí se puede:
-      // 1. Crear una estructura de grupo para asistencias
-      // 2. Inicializar contadores de asistencia
-      // 3. Preparar datos para el QR
-
-      this.logger.log(
-        `✅ Alumno ${event.matricula} preparado para asistencias en NRC ${event.nrc_materia}`
-      );
+      this.logger.log(`📨 Evento recibido: Alumno ${event.matricula} inscrito a ${event.nrc_materia}`);
+      this.logger.log(`✅ Alumno ${event.matricula} preparado para asistencias en NRC ${event.nrc_materia}`);
     } catch (error) {
       this.logger.error('❌ Error procesando evento alumno.inscrito:', error);
     }
   }
 
-  /**
-   * 📊 Calcular resumen de asistencia para una materia
-   * Endpoint: GET /asistencias/calcular-resumen/:nrc_materia
-   */
   async calcularResumenAsistencia(nrc_materia: string, rabbitmqService: RabbitMQService) {
+    // Pegar aquí exactamente el código que ya tenías en este método, está perfecto.
     try {
       this.logger.log(`📊 Calculando resumen de asistencia para NRC ${nrc_materia}`);
-
-      // Obtener todas las asistencias de esta materia
-      const asistencias = await this.asistenciaRepository.find({
-        where: { nrc_materia },
-      });
+      const asistencias = await this.asistenciaRepository.find({ where: { nrc_materia } });
 
       if (asistencias.length === 0) {
         this.logger.warn(`⚠️ No hay asistencias registradas para ${nrc_materia}`);
-        return {
-          mensaje: 'No hay asistencias registradas',
-          nrc_materia,
-          estudiantes_procesados: 0,
-        };
+        return { mensaje: 'No hay asistencias registradas', nrc_materia, estudiantes_procesados: 0 };
       }
 
-      // Agrupar por alumno
       const alumnosPorMatricula: { [key: string]: Asistencia[] } = {};
       for (const asistencia of asistencias) {
         if (!alumnosPorMatricula[asistencia.matricula_alumno]) {
@@ -154,82 +143,40 @@ export class AppService {
         alumnosPorMatricula[asistencia.matricula_alumno].push(asistencia);
       }
 
-      // Procesar cada alumno
-      const resultados: any[] = []; // <-- CORRECCIÓN: Tipado explícito para evitar error "never[]"
+      const resultados: any[] = [];
       const totalClases = Object.values(alumnosPorMatricula).length > 0
-        ? Math.max(...Object.values(alumnosPorMatricula).map(a => a.length))
-        : 1;
+        ? Math.max(...Object.values(alumnosPorMatricula).map(a => a.length)) : 1;
 
-      for (const [matricula, asistenciasAlumno] of Object.entries(
-        alumnosPorMatricula,
-      )) {
-        const asistencias_count = asistenciasAlumno.filter(
-          (a) => a.estado === 'presente',
-        ).length;
+      for (const [matricula, asistenciasAlumno] of Object.entries(alumnosPorMatricula)) {
+        const asistencias_count = asistenciasAlumno.filter((a) => a.estado === 'presente').length;
         const faltas = asistenciasAlumno.length - asistencias_count;
-        const porcentaje_asistencia = Math.round(
-          (asistencias_count / totalClases) * 100,
-        );
+        const porcentaje_asistencia = Math.round((asistencias_count / totalClases) * 100);
 
         const evento: AsistenciaResumenCalculadoEvent = {
-          alumno_id: matricula,
-          matricula,
-          nrc_materia,
-          total_clases: totalClases,
-          asistencias: asistencias_count,
-          faltas,
-          porcentaje_asistencia,
-          derecho_proyecto: porcentaje_asistencia >= 80,
-          fecha_calculo: new Date(),
+          alumno_id: matricula, matricula, nrc_materia, total_clases: totalClases,
+          asistencias: asistencias_count, faltas, porcentaje_asistencia,
+          derecho_proyecto: porcentaje_asistencia >= 80, fecha_calculo: new Date(),
         };
 
-        // Publicar evento de resumen
-        await rabbitmqService.publishEvent(
-          RABBITMQ_ROUTING_KEYS.ASISTENCIA_RESUMEN_CALCULADO,
-          evento,
-        );
+        await rabbitmqService.publishEvent(RABBITMQ_ROUTING_KEYS.ASISTENCIA_RESUMEN_CALCULADO, evento);
 
-        // Si está bajo 80%, publicar evento de sin derecho
         if (porcentaje_asistencia < 80) {
           const eventoSinDerecho: AlumnoSinDerechoProyectoEvent = {
-            alumno_id: matricula,
-            matricula,
-            nrc_materia,
-            motivo: 'asistencia_baja',
-            porcentaje_asistencia,
-            fecha_evento: new Date(), // <-- CORRECCIÓN: Faltaba la fecha
+            alumno_id: matricula, matricula, nrc_materia, motivo: 'asistencia_baja',
+            porcentaje_asistencia, fecha_evento: new Date(),
           };
-
-          await rabbitmqService.publishEvent(
-            RABBITMQ_ROUTING_KEYS.ALUMNO_SIN_DERECHO_PROYECTO,
-            eventoSinDerecho,
-          );
-
-          this.logger.warn(
-            `⚠️ ${matricula} sin derecho a proyecto en ${nrc_materia} (${porcentaje_asistencia}%)`
-          );
+          await rabbitmqService.publishEvent(RABBITMQ_ROUTING_KEYS.ALUMNO_SIN_DERECHO_PROYECTO, eventoSinDerecho);
+          this.logger.warn(`⚠️ ${matricula} sin derecho a proyecto en ${nrc_materia} (${porcentaje_asistencia}%)`);
         }
 
         resultados.push({
-          matricula,
-          total_clases: totalClases,
-          asistencias: asistencias_count,
-          faltas,
-          porcentaje_asistencia, // <-- CORRECCIÓN: Enviarlo como número en vez de string
-          derecho_proyecto: porcentaje_asistencia >= 80,
+          matricula, total_clases: totalClases, asistencias: asistencias_count,
+          faltas, porcentaje_asistencia, derecho_proyecto: porcentaje_asistencia >= 80,
         });
       }
 
-      this.logger.log(
-        `✅ Resumen calculado para ${resultados.length} estudiantes en ${nrc_materia}`
-      );
-
-      return {
-        mensaje: 'Resumen de asistencia calculado',
-        nrc_materia,
-        estudiantes_procesados: resultados.length,
-        resumen: resultados,
-      };
+      this.logger.log(`✅ Resumen calculado para ${resultados.length} estudiantes en ${nrc_materia}`);
+      return { mensaje: 'Resumen de asistencia calculado', nrc_materia, estudiantes_procesados: resultados.length, resumen: resultados };
     } catch (error) {
       this.logger.error('❌ Error calculando resumen:', error);
       throw error;

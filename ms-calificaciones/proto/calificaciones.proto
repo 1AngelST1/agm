@@ -5,8 +5,12 @@ package calificaciones;
 service CalificacionesService {
   rpc GetCalificacionesByMatricula(GetCalificacionesRequest) returns (CalificacionesResponse);
   rpc CreateCalificacion(CreateCalificacionRequest) returns (CalificacionResponse);
+  
+  //AGREGAMOS EL MÉTODO QUE BUSCA MS-REPORTES
+  rpc GetConcentrado(GetConcentradoRequest) returns (ConcentradoResponse);
 }
 
+// ... (Aquí van tus mensajes GetCalificacionesRequest, etc. que ya tenías) ...
 message GetCalificacionesRequest {
   string matricula = 1;
 }
@@ -42,4 +46,23 @@ message Grupo {
   string docente_id = 3;
   string seccion = 4;
   string periodo = 5;
+}
+
+// AGREGAMOS LOS MENSAJES PARA EL REPORTE
+message GetConcentradoRequest {
+  string nrc = 1;
+}
+
+message ConcentradoResponse {
+  repeated AlumnoCalificado calificaciones = 1;
+}
+
+message AlumnoCalificado {
+  string matricula = 1;
+  string nombre_estudiante = 2;
+  float calificacion_examen = 3;
+  float calificacion_tarea = 4;
+  float calificacion_proyecto = 5;
+  float promedio_ponderado = 6;
+  string estatus = 7;
 }

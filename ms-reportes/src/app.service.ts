@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable prettier/prettier */
-
 import { Injectable, Inject, OnModuleInit, HttpException, HttpStatus } from '@nestjs/common';
-import type { ClientGrpc } from '@nestjs/microservices'; // 🔥 Aquí agregamos 'type'
+import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom, Observable } from 'rxjs';
 import * as ExcelJS from 'exceljs';
 
@@ -24,7 +20,7 @@ interface AlumnoCalificado {
 }
 
 interface CalificacionesService {
-  getConcentrado(data: { nrc: string }): Observable<any>;
+  GetConcentrado(data: { nrc: string }): Observable<any>;
 }
 
 @Injectable()
@@ -46,16 +42,18 @@ export class AppService implements OnModuleInit {
       console.log(`📊 Solicitando datos a Calificaciones para NRC: ${nrc}...`);
 
       const concentradoData = await lastValueFrom(
-        this.calificacionesService.getConcentrado({ nrc }),
+        this.calificacionesService.GetConcentrado({ nrc }),
       );
 
       console.log('📦 CONCENTRADO DATA RECIBIDO:', JSON.stringify(concentradoData, null, 2));
-      console.log('📦 Keys en concentradoData:', Object.keys(concentradoData || {}));
-      console.log('📦 calificaciones:', concentradoData?.calificaciones);
-      console.log('📦 numero de calificaciones:', concentradoData?.calificaciones?.length);
 
-      if (!concentradoData || !concentradoData.calificaciones) {
-        throw new Error(`No se encontraron datos para este grupo. Datos: ${JSON.stringify(concentradoData)}`);
+      // 🔥 LA TRAMPA gRPC RESUELTA: Buscamos el arreglo sin importar cómo venga envuelto
+      const listaCalificaciones = concentradoData?.calificaciones || concentradoData?.ConcentradoResponse?.calificaciones || [];
+
+      console.log(`📦 Número de calificaciones encontradas: ${listaCalificaciones.length}`);
+
+      if (!listaCalificaciones || listaCalificaciones.length === 0) {
+        throw new Error(`El grupo está vacío o la estructura no coincide. Datos: ${JSON.stringify(concentradoData)}`);
       }
 
       console.log('✅ Datos recibidos, dibujando Excel...');
@@ -82,10 +80,9 @@ export class AppService implements OnModuleInit {
       };
       worksheet.getRow(1).alignment = { horizontal: 'center' };
 
-      const alumnos: AlumnoCalificado[] = concentradoData.calificaciones;
+      const alumnos: AlumnoCalificado[] = listaCalificaciones;
       
       alumnos.forEach((alumno) => {
-        // 🔥 Protobuf convierte snake_case a camelCase en JavaScript
         worksheet.addRow({
           matricula: alumno.matricula,
           nombre: alumno.nombreEstudiante || alumno.nombre_estudiante,
@@ -99,7 +96,8 @@ export class AppService implements OnModuleInit {
 
       return workbook;
     } catch (error) {
-      console.error('❌ Error generando Excel:', (error as Error).message);
+      // 🔥 Capturamos e imprimimos el error ABSOLUTO por si la conexión falla
+      console.error('❌ Error real contactando a ms-calificaciones:', error);
       throw new HttpException(
         'Error generando reporte',
         HttpStatus.INTERNAL_SERVER_ERROR,
